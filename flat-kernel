@@ -272,7 +272,7 @@ function build_kernel() {
         move_kernel_files
     else
         echo "${RED}Kernel image not found!${RST}\n"
-        #ending_info
+        ending_info
     fi
 }
 
@@ -318,7 +318,6 @@ function package_zip() {
         echo "${GRN}Kernel zip successfully generated!${RST}\n"
         rm "${UNSIGNED_ZIP}"
         mv "${SIGNED_ZIP}" "${HOME}/flatKernel"
-        echo "Time elapsed: $(format_time "${START}" "$(date +"%s")")"
     fi
 }
 
@@ -391,6 +390,31 @@ function print_variables() {
     echo "${BOLD}GCC:${RST}        ${GCC}\n"
 }
 
+# Print file info
+function ending_info() {
+    header "SCRIPT FINISHED!"
+
+    END=$(date +"%s")
+    DURATION=$(format_time "${START}" "${END}")
+
+    if [[ "${*}" =~ "-s" ]]; then
+        FILE_LOCATION=${HOME}/flatKernel/${SIGNED_ZIP}
+        SIZE=$(du -h "${FILE_LOCATION}" | awk '{print $1}')
+        EXIT_CODE=0
+
+        echo "${GRN}FILE LOCATION: ${FILE_LOCATION}"
+        echo "SIZE: ${SIZE}${RST}"
+    else
+        echo "Build failed"
+        EXIT_CODE=1
+    fi
+
+    echo "${GRN}DURATION: ${DURATION}${RST}"
+    echo
+    echo "\a"
+    exit ${EXIT_CODE}
+}
+
 ################
 #              #
 # SCRIPT START #
@@ -428,3 +452,6 @@ build_kernel
 
 # After build tasks
 after_build_tasks
+
+# Print file info and time
+ending_info -s
