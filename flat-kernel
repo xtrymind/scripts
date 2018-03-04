@@ -67,6 +67,16 @@ function parse_parameters() {
 
                 VERSION=${1} ;;
 
+            # How much script output to show
+            "-V"|"--verbosity-level")
+                shift && enforce_value "${@}"
+                VERBOSITY_LEVEL=${1}
+                case ${VERBOSITY_LEVEL} in
+                    "0") RG_LINES=0; HIDDEN_COMMANDS=true ;;
+                    "1") SHOW_OUTPUT=true; HIDDEN_COMMANDS=true ;;
+                    "2") SHOW_OUTPUT=true; VERBOSE_COMMANDS=true ;;
+                esac ;;
+
             # Disables -Werror config
             "-Wno-error")
                 NO_WERROR=true ;;
@@ -80,17 +90,23 @@ function parse_parameters() {
 
     # Default parameters
     [[ -z ${DEVICE} ]] && DEVICE="mido"
+    [[ -z ${VERBOSITY_LEVEL} ]] && HIDDEN_COMMANDS=true
 
 }
 
 # 'cp -v' alias
 function cp() {
-    command cp -v "${@}"
+    command cp ${VERBOSE_COMMANDS:+ "-v"} "${@}"
 }
 
 # 'mv -v' alias
 function mv() {
-    command mv -v "${@}"
+    command mv ${VERBOSE_COMMANDS:+ "-v"} "${@}"
+}
+
+# 'rm -v' alias
+function rm() {
+    command rm ${VERBOSE_COMMANDS:+ "-v"} "${@}"
 }
 
 function device_flags() {
@@ -216,12 +232,17 @@ function make_wrapper_clang() {
 
 # Silence output function
 function kmake() {
+    # Only show errors and warnings when compiling (unless debug)
+    if [[ -n ${SHOW_OUTPUT} ]]; then
         make_wrapper_${COMPILER} "${@}"
+    else
+        make_wrapper_${COMPILER} "${@}" |& rg --color=never --after-context=${RG_LINES:-10} "error:|warning:" && echo
+    fi
 }
 
 function backup_version(){
     cp -f "${OUT_FOLDER}"/.version /tmp/
-    git clean -dfx
+    git clean -dfx ${HIDDEN_COMMANDS:+ "-q"}
     mkdir "${OUT_FOLDER}"
     cp /tmp/.version "${OUT_FOLDER}"
 }
@@ -282,7 +303,7 @@ function package_zip() {
     cd "${ANYKERNEL2_FOLDER}" || die "AnyKernel2 folder shift failed!"
 
     # Package the zip without the README
-    zip -r9 "${UNSIGNED_ZIP}" -x README.md -- *
+    zip ${HIDDEN_COMMANDS:+ "-q"} -r9 "${UNSIGNED_ZIP}" -x README.md -- *
 
     # Sign zip
     java -jar "${BIN_FOLDER}/zipsigner-3.0.jar" \
@@ -297,7 +318,6 @@ function package_zip() {
         echo "${GRN}Kernel zip successfully generated!${RST}\n"
         rm "${UNSIGNED_ZIP}"
         mv "${SIGNED_ZIP}" "${HOME}/flatKernel"
-        echo "${GRN}Kernel located at ${HOME}/flatKernel/${SIGNED_ZIP} ${RST}\n"
         echo "Time elapsed: $(format_time "${START}" "$(date +"%s")")"
     fi
 }
@@ -307,8 +327,7 @@ function clean_up() {
     # Clean AnyKernel2 folder if building a zip
     if [[ -z ${IMAGE_ONLY} ]]; then
         cd "${ANYKERNEL2_FOLDER}" || die "AnyKernel2 source is missing!"
-        echo "Cleaning at ${PWD}"
-        git clean -xfd
+        git clean -xfd ${HIDDEN_COMMANDS:+ "-q"}
     fi
 
     # enter kernel directory
