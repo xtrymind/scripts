@@ -14,37 +14,15 @@ if [[ "$(command -v hub)" ]]; then
     alias git='hub';
 fi
 
-# Some git aliases
-alias gs='git status';
-alias gpul='git pull';
-alias gf='git fetch';
-alias grem='git remote';
-alias gremv='git remote -v';
-alias gpu='git push';
-alias gpf='gpu -f'
-alias gpfu='gpu -fu';
-alias grev='git revert';
-alias gcp='git cherry-pick';
-alias gcpc='gcp --continue';
-alias gcpa='gcp --abort';
-alias gr='git reset';
-alias grh='gr --hard';
-alias grs='gr --soft';
-alias grb='git rebase';
-alias grbi='grb --interactive';
-alias grbc='grb --continue';
-alias grbs='grb --skip';
-alias grba='grb --abort';
-alias gb='git bisect';
-alias gd='git diff';
-alias gc='git commit';
-
-# alias
+# alias Arch Linux
 alias inst="sudo pacman -S --noconfirm "
 alias rem="sudo pacman -Rns "
-alias update="sudo pacman -Syu --noconfirm "
+alias upd="sudo pacman -Syu --noconfirm "
 alias ref="sudo reflector --latest 200 --protocol http --protocol https --sort rate --save /etc/pacman.d/mirrorlist"
 alias cu="checkupdates"
+
+# moar alias
+alias p1="patch -p1"
 
 # Colors
 BLINK_RED="\033[05;31m"
