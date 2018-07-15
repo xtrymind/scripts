@@ -156,6 +156,7 @@ function make_wrapper_gcc() {
          ARCH=${ARCHITECTURE} \
          CROSS_COMPILE="${CCACHE} ${GCC}" \
          KBUILD_BUILD_VERSION="${KBUILD_BUILD_VERSION}" \
+         KBUILD_BUILD_TIMESTAMP="${TIMESTAMP}" \
          LOCALVERSION="${LOCALVERSION}" \
          O="${OUT_FOLDER}" \
          "${@}"
