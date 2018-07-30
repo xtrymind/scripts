@@ -15,7 +15,7 @@ SOURCE_FOLDER=${KERNELDIR}/mido
 OUT_FOLDER=${SOURCE_FOLDER}/out
 ANYKERNEL2_FOLDER=${HOME}/kernel/AnyKernel2
 BIN_FOLDER=${HOME}/bin
-TC_FOLDER=${HOME}/tc
+TC_FOLDER=${HOME}/toolchains
 
 # variable
 ARCHITECTURE=arm64
@@ -29,15 +29,12 @@ CCACHE=$(command -v ccache)
 START=$(date +"%s")
 
 # toolchain
-CLANG="${HOME}/tc/clang-7.x/bin/clang"
-CLANG_FOLDER=${HOME}/tc/clang-7.x/
+CLANG="${HOME}/toolchains/android-clang-7.x/bin/clang"
+CLANG_FOLDER=${HOME}/toolchains/android-clang-7.x/
 
 # Number of make threads
 THREADS=$(nproc --all)
 JOBS_FLAG="-j${THREADS}"
-
-LLVM_DIS=${CLANG_FOLDER}/bin/llvm-dis
-CLANG_LD_PATH=${CLANG_FOLDER}/lib
 
 # Gather parameters
 function parse_parameters() {
@@ -51,6 +48,12 @@ function parse_parameters() {
                 shift && enforce_value "${@}"
 
                 COMPILER=${1} ;;
+
+            # Config to use for compiling
+            "-c"|"--config")
+                shift && enforce_value "${@}"
+
+                DEFCONFIG=${1} ;;
 
             # Where to move zip after compilation
             "-m"|"--mode")
@@ -112,9 +115,8 @@ function device_flags() {
             DEVICE_NAME_GITHUB=mido
             DEVICE_NAME_WEB=${DEVICE} 
             
-            [[ -z ${GCC_FOLDER} ]] && GCC_FOLDER=${TC_FOLDER}/aarch64-linux-gnu
-            #GCC="${HOME}/tc/aarch64-linux-gnu/bin/aarch64-linux-gnu-"
-			#GCC="${HOME}/tc/aarch64--glibc--bleeding-edge-2018.06-1/bin/aarch64-buildroot-linux-gnu-"
+            #[[ -z ${GCC_FOLDER} ]] && GCC_FOLDER=${TC_FOLDER}/aarch64-linux-gnu
+            [[ -z ${GCC_FOLDER} ]] && GCC_FOLDER=${TC_FOLDER}/aarch64-linux-gnu_8.2.1
             ;;
 
         *)
@@ -223,17 +225,21 @@ function generate_variables() {
     GCC_BIN=$(find "${GCC_FOLDER}/bin" \( -type f -o -type l \) -name '*-gcc' | head -n1)
     [[ -z ${GCC_BIN} ]] && die "64-bit GCC toolchain could not be found!"
     GCC=${GCC_BIN%gcc}
-	
-	CLANG_VERSION=$(${CLANG} --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
-    CLANG_LD_PATH=${CLANG_FOLDER}/lib
-    if [[ ${MODE} = "personal" ]]; then
-		KCFLAGS="-mllvm -polly \
-				 -mllvm -polly-run-dce \
-				 -mllvm -polly-run-inliner \
-				 -mllvm -polly-opt-fusion=max \
-				 -mllvm -polly-ast-use-context \
-				 -mllvm -polly-vectorizer=stripmine \
-				 -mllvm -polly-detect-keep-going"
+
+	# Handle Clang
+    if [[ ${COMPILER} = "clang" ]]; then
+		CLANG_VERSION=$(${CLANG} --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
+		CLANG_LD_PATH=${CLANG_FOLDER}/lib
+		LLVM_DIS=${CLANG_FOLDER}/bin/llvm-dis
+		if [[ -n ${PERSONAL} ]]; then
+			KCFLAGS="-mllvm -polly \
+					 -mllvm -polly-run-dce \
+					 -mllvm -polly-run-inliner \
+					 -mllvm -polly-opt-fusion=max \
+					 -mllvm -polly-ast-use-context \
+					 -mllvm -polly-vectorizer=stripmine \
+					 -mllvm -polly-detect-keep-going"
+		fi
 	fi
 }
 
