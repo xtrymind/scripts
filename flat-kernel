@@ -11,7 +11,6 @@ source ${HOME}/dotfiles/common
 
 # directory
 SOURCE_FOLDER=${KERNELDIR}/mido
-#SOURCE_FOLDER=${KERNELDIR}/msm-3.18
 OUT_FOLDER=${SOURCE_FOLDER}/out
 ANYKERNEL2_FOLDER=${HOME}/kernel/AnyKernel2
 BIN_FOLDER=${HOME}/bin
@@ -27,10 +26,6 @@ CCACHE=$(command -v ccache)
 
 # Start tracking time
 START=$(date +"%s")
-
-# toolchain
-CLANG="${HOME}/toolchains/android-clang-7.x/bin/clang"
-CLANG_FOLDER=${HOME}/toolchains/android-clang-7.x/
 
 # Number of make threads
 THREADS=$(nproc --all)
@@ -114,9 +109,9 @@ function device_flags() {
             DEVICE_NAME_FILE=${DEVICE^}
             DEVICE_NAME_GITHUB=mido
             DEVICE_NAME_WEB=${DEVICE} 
-            
-            #[[ -z ${GCC_FOLDER} ]] && GCC_FOLDER=${TC_FOLDER}/aarch64-linux-gnu
+
             [[ -z ${GCC_FOLDER} ]] && GCC_FOLDER=${TC_FOLDER}/aarch64-linux-gnu_8.2.1
+            [[ -z ${CLANG_FOLDER} ]]&& CLANG_FOLDER=${TC_FOLDER}/android-clang-8.x/
             ;;
 
         *)
@@ -124,9 +119,39 @@ function device_flags() {
     esac
 }
 
+# Set up other variables
+function generate_variables() {
+    GCC_BIN=$(find "${GCC_FOLDER}/bin" \( -type f -o -type l \) -name '*-gcc' | head -n1)
+    [[ -z ${GCC_BIN} ]] && die "64-bit GCC toolchain could not be found!"
+    GCC=${GCC_BIN%gcc}
+
+	# Handle Clang
+    if [[ ${COMPILER} = "clang" ]]; then
+		CLANG=${CLANG_FOLDER}/bin/clang
+		CLANG_VERSION=$(${CLANG} --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
+
+		CLANG_LD_PATH=${CLANG_FOLDER}/lib
+		LLVM_DIS=${CLANG_FOLDER}/bin/llvm-dis
+		if [[ -n ${PERSONAL} ]]; then
+			KCFLAGS="-mllvm -polly \
+					 -mllvm -polly-run-dce \
+					 -mllvm -polly-run-inliner \
+					 -mllvm -polly-opt-fusion=max \
+					 -mllvm -polly-ast-use-context \
+					 -mllvm -polly-vectorizer=stripmine \
+					 -mllvm -polly-detect-keep-going"
+		fi
+	fi
+}
+
 # Easy alias for escape codes
 function echo() {
     command echo -e "$@"
+}
+
+# 'cp -v' alias
+function cp() {
+    command cp -v "${@}"
 }
 
 # Prints an error in bold red and exits the script
@@ -188,24 +213,23 @@ function kmake() {
         make_wrapper_${COMPILER} "${@}"
 }
 
-function clv(){
-	cp ${OUT_FOLDER}/.version /tmp/
+function backup_version(){
+	cp -f ${OUT_FOLDER}/.version /tmp/
 	git clean -dfx
 	mkdir ${OUT_FOLDER}
-	mv /tmp/.version ${OUT_FOLDER}
+	cp /tmp/.version ${OUT_FOLDER}
 }
 
 # Build kernel image
 function build_kernel() {
-    # Clean source folder
-    #git clean -dfx
-    clv
+    backup_version
 
     # Point to proper defconfig and generate version files
     kmake ${DEFCONFIG} prepare
 
     # Make the kernel
-    kmake 2>&1 | tee ../kernel.log
+    #kmake 2>&1 | tee ../kernel.log
+    kmake
 
     # Find the compiled files
     OUT_KERNEL_IMAGE=$(find "${OUT_FOLDER}/arch/${ARCHITECTURE}" -name 'Image.*-dtb' 2>/dev/null)
@@ -220,35 +244,13 @@ function build_kernel() {
     fi
 }
 
-# Set up other variables
-function generate_variables() {
-    GCC_BIN=$(find "${GCC_FOLDER}/bin" \( -type f -o -type l \) -name '*-gcc' | head -n1)
-    [[ -z ${GCC_BIN} ]] && die "64-bit GCC toolchain could not be found!"
-    GCC=${GCC_BIN%gcc}
-
-	# Handle Clang
-    if [[ ${COMPILER} = "clang" ]]; then
-		CLANG_VERSION=$(${CLANG} --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
-		CLANG_LD_PATH=${CLANG_FOLDER}/lib
-		LLVM_DIS=${CLANG_FOLDER}/bin/llvm-dis
-		if [[ -n ${PERSONAL} ]]; then
-			KCFLAGS="-mllvm -polly \
-					 -mllvm -polly-run-dce \
-					 -mllvm -polly-run-inliner \
-					 -mllvm -polly-opt-fusion=max \
-					 -mllvm -polly-ast-use-context \
-					 -mllvm -polly-vectorizer=stripmine \
-					 -mllvm -polly-detect-keep-going"
-		fi
-	fi
-}
-
 # Move kernel files after compilation
 function move_kernel_files() {
         # Move the kernel image
         cp "${OUT_KERNEL_IMAGE}" "${ANYKERNEL2_FOLDER}"
         [[ -n ${OUT_DTBO_IMAGE} ]] && cp "${OUT_DTBO_IMAGE}" "${ANYKERNEL2_FOLDER}/dtbo"
-        echo "Version: $(cat "${OUT_FOLDER}/include/config/kernel.release")" > "${ANYKERNEL2_FOLDER}/version"
+        echo "Kernel version: $(cat "${OUT_FOLDER}/include/config/kernel.release")" >> "${ANYKERNEL2_FOLDER}/version"
+        echo "Revision: $(cat "${OUT_FOLDER}/.version")" >> "${ANYKERNEL2_FOLDER}/version"
 }
 
 # Package zip
@@ -263,7 +265,7 @@ function package_zip() {
     zip -r9 "${UNSIGNED_ZIP}" -x README.md -- *
 
     # Sign zip
-    java -jar "${BIN_FOLDER}/zipsigner-2.1.jar" \
+    java -jar "${BIN_FOLDER}/zipsigner-2.2.jar" \
               "${UNSIGNED_ZIP}" \
               "${SIGNED_ZIP}"
 
@@ -275,7 +277,7 @@ function package_zip() {
         echo "${GRN}Kernel zip successfully generated!${RST}\n"
         rm ${UNSIGNED_ZIP}
         #cp ${SIGNED_ZIP} ${HOME}
-        echo "${GRN}Kernel located at "${HOME}/${SIGNED_ZIP}" ${RST}\n"
+        echo "${GRN}Kernel located at "${PWD}/${SIGNED_ZIP}" ${RST}\n"
         echo "Time elapsed: $(format_time "${START}" "$(date +"%s")")"
     fi
 }
@@ -284,6 +286,7 @@ function package_zip() {
 function clean_up() {
     # Clean AnyKernel2 folder
     cd "${ANYKERNEL2_FOLDER}" || die "AnyKernel2 source is missing!"
+    echo "Cleaning at ${PWD}"
     git clean -xfd
 }
 
@@ -405,6 +408,5 @@ cd ${SOURCE_FOLDER}
 generate_variables
 # Generate variables such as versions
 generate_version
-#generate_changelog
 build_kernel
 package_zip
