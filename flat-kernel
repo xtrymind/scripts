@@ -13,7 +13,6 @@ source ${HOME}/dotfiles/common
 KERNELDIR=${HOME}/devel/kernel
 SOURCE_FOLDER=${KERNELDIR}/mido
 OUT_FOLDER=${SOURCE_FOLDER}/out
-ANYKERNEL2_FOLDER=${KERNELDIR}/AnyKernel2
 BIN_FOLDER=${HOME}/bin
 TC_FOLDER=${HOME}/toolchains
 
@@ -38,6 +37,12 @@ function parse_parameters() {
     PARAMS="${*}"
     while [[ ${#} -ge 1 ]]; do
         case ${1} in
+            # AnyKernel folder
+            "-ak"|"--anykernel")
+                shift && enforce_value "${@}"
+
+                AK=${1} ;;
+
             # Compiler to use
             "-cc"|"--compiler")
                 shift && enforce_value "${@}"
@@ -100,6 +105,8 @@ function device_flags() {
 
             [[ -z ${DEFCONFIG} ]] && DEFCONFIG="flat_defconfig"
 
+            [[ -z ${AK} ]] && AK="AnyKernel2"
+
             DEVICE_NAME_FILE=${DEVICE^}
             DEVICE_NAME_GITHUB=mido
 
@@ -135,6 +142,11 @@ function generate_variables() {
 					 -mllvm -polly-detect-keep-going"
 		fi
 	fi
+
+    # Handle AnyKernel2 Folder
+    if [[ -n ${AK} ]]; then
+		ANYKERNEL2_FOLDER=${KERNELDIR}/${AK}
+    fi
 }
 
 # Make wrapper for make function for GCC
@@ -253,6 +265,9 @@ function clean_up() {
     cd "${ANYKERNEL2_FOLDER}" || die "AnyKernel2 source is missing!"
     echo "Cleaning at ${PWD}"
     git clean -xfd
+
+    # enter kernel directory
+    cd "${SOURCE_FOLDER}" || die "Kernel source is missing!"
 }
 
 # Setup compilation
@@ -333,9 +348,8 @@ function generate_changelog() {
 header "COMPILING KERNEL"
 parse_parameters "${@}"
 device_flags
-clean_up
-cd "${SOURCE_FOLDER}" || exit
 generate_variables
+clean_up
 # Generate variables such as versions
 generate_version
 build_kernel
