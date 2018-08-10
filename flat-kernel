@@ -10,9 +10,10 @@
 source ${HOME}/dotfiles/common
 
 # directory
+KERNELDIR=${HOME}/devel/kernel
 SOURCE_FOLDER=${KERNELDIR}/mido
 OUT_FOLDER=${SOURCE_FOLDER}/out
-ANYKERNEL2_FOLDER=${HOME}/kernel/AnyKernel2
+ANYKERNEL2_FOLDER=${KERNELDIR}/AnyKernel2
 BIN_FOLDER=${HOME}/bin
 TC_FOLDER=${HOME}/toolchains
 
@@ -35,7 +36,6 @@ JOBS_FLAG="-j${THREADS}"
 function parse_parameters() {
     # Unset the universal OS variable for this script only
     PARAMS="${*}"
-    EXTRA_MAKE_FLAGS=()
     while [[ ${#} -ge 1 ]]; do
         case ${1} in
             # Compiler to use
@@ -56,10 +56,6 @@ function parse_parameters() {
 
                 MODE=${1} ;;
 
-            # Don't move/delete zips in FILE_MOVE folder
-            "-n"|"--no-clean")
-                NOCLEAN=true ;;
-
             # Test versioning (# in kernel version)
             "-r"|"--revision")
                 shift && enforce_value "${@}"
@@ -71,12 +67,6 @@ function parse_parameters() {
                 shift && enforce_value "${@}"
 
                 VERSION=${1} ;;
-
-            # beta
-            "-b"|"--beta")
-                shift && enforce_value "${@}"
-
-                BETA=${1} ;;
 
             # Disables -Werror config
             "-Wno-error")
@@ -94,9 +84,13 @@ function parse_parameters() {
     [[ -z ${MODE} ]] && MODE="personal"
 
     # Easy to use variables for if statements
-    [[ ${MODE} != "stable" ]] && NOT_STABLE=true || STABLE=true
     [[ ${MODE} = "personal" ]] && PERSONAL=true || PERSONAL=false
 
+}
+
+# 'cp -v' alias
+function cp() {
+    command cp -v "${@}"
 }
 
 function device_flags() {
@@ -108,7 +102,6 @@ function device_flags() {
 
             DEVICE_NAME_FILE=${DEVICE^}
             DEVICE_NAME_GITHUB=mido
-            DEVICE_NAME_WEB=${DEVICE} 
 
             [[ -z ${GCC_FOLDER} ]] && GCC_FOLDER=${TC_FOLDER}/aarch64-linux-gnu_8.2.1
             [[ -z ${CLANG_FOLDER} ]]&& CLANG_FOLDER=${TC_FOLDER}/android-clang-8.x/
@@ -142,39 +135,6 @@ function generate_variables() {
 					 -mllvm -polly-detect-keep-going"
 		fi
 	fi
-}
-
-# Easy alias for escape codes
-function echo() {
-    command echo -e "$@"
-}
-
-# 'cp -v' alias
-function cp() {
-    command cp -v "${@}"
-}
-
-# Prints an error in bold red and exits the script
-function die() {
-    display_error "${@}"
-    if type -p pre_exit_commands; then
-        pre_exit_commands
-    fi
-    exit
-}
-
-# Enforces the value needed for two-part flags
-function enforce_value() {
-    [[ ${#} -lt 1 ]] && die "A additional value is needed for one of the flags passed to this script!"
-}
-
-# Prints a formatted header to let the user know what's being done
-function header() {
-    echo ${RED}
-    echo "====$(for i in $(seq ${#1}); do echo "=\c"; done)===="
-    echo "==  ${1}  =="
-    echo "====$(for i in $(seq ${#1}); do echo "=\c"; done)===="
-    echo ${RST}
 }
 
 # Make wrapper for make function for GCC
@@ -214,10 +174,10 @@ function kmake() {
 }
 
 function backup_version(){
-	cp -f ${OUT_FOLDER}/.version /tmp/
+	cp -f "${OUT_FOLDER}"/.version /tmp/
 	git clean -dfx
-	mkdir ${OUT_FOLDER}
-	cp /tmp/.version ${OUT_FOLDER}
+	mkdir "${OUT_FOLDER}"
+	cp /tmp/.version "${OUT_FOLDER}"
 }
 
 # Build kernel image
@@ -226,6 +186,12 @@ function build_kernel() {
 
     # Point to proper defconfig and generate version files
     kmake ${DEFCONFIG} prepare
+
+    # If requested, disable -Werror
+    if [[ -n ${NO_WERROR} ]]; then
+        ./scripts/config --file out/.config -d CONFIG_CC_WERROR
+        kmake olddefconfig
+    fi
 
     # Make the kernel
     #kmake 2>&1 | tee ../kernel.log
@@ -265,7 +231,7 @@ function package_zip() {
     zip -r9 "${UNSIGNED_ZIP}" -x README.md -- *
 
     # Sign zip
-    java -jar "${BIN_FOLDER}/zipsigner-2.2.jar" \
+    java -jar "${BIN_FOLDER}/zipsigner-3.0.jar" \
               "${UNSIGNED_ZIP}" \
               "${SIGNED_ZIP}"
 
@@ -275,9 +241,8 @@ function package_zip() {
         ending_info
     else
         echo "${GRN}Kernel zip successfully generated!${RST}\n"
-        rm ${UNSIGNED_ZIP}
-        #cp ${SIGNED_ZIP} ${HOME}
-        echo "${GRN}Kernel located at "${PWD}/${SIGNED_ZIP}" ${RST}\n"
+        rm "${UNSIGNED_ZIP}"
+        echo "${GRN}Kernel located at ${PWD}/${SIGNED_ZIP} ${RST}\n"
         echo "Time elapsed: $(format_time "${START}" "$(date +"%s")")"
     fi
 }
@@ -292,48 +257,26 @@ function clean_up() {
 
 # Setup compilation
 function generate_version() {
-    # Generate kernel version
-    KVER=$(make kernelversion)
-
     # This is set in the defconfig
-    CONFIG_LOCALVERSION="-flat"
-	
 	CONFIG_KERNELNAMEZIP="flatKernel"
-    #LOCALVERSION="-mido"
-    LOCALVERSION_ZIP="-mido"
+    LOCALVERSION_ZIP="-${DEVICE_NAME_FILE}"
 	
 	# date in utc
 	TIMESTAMP=$(date -u)
-
-	# build version
-	RVER=$(git tag | wc -l)
-	#KBUILD_BUILD_VERSION=${RVER}
 
     # Add version if present
     if [[ -n ${VERSION} ]]; then
         VERSION_TEXT="-v${VERSION}"
         #LOCALVERSION="${LOCALVERSION}${VERSION_TEXT}"
     else
-		RV=$(($(cat ${OUT_FOLDER}/.version)+1))
+		RV=$(($(cat "${OUT_FOLDER}"/.version)+1))
 		VERSION_TEXT="-r${RV}"
     fi
 
-    if [[ -n ${BETA} ]]; then
-		BETA_TEXT="-${BETA}"
-		#LOCALVERSION="${LOCALVERSION}${BETA_TEXT}"
-    fi
-
-    # If the mode isn't stable, add hash information to the file for debugging
-        # Furthermore, if it is a personal build, use a shorter hash length
+    # Add hash information to the file for debugging with 12 hash length
     NUM=12
     SHA="-g$(git rev-parse --verify --short=${NUM} HEAD)"
     LOCALVERSION="${LOCALVERSION}${SHA}"
-
-        # Don't add the hash to the zip name for personal builds, use the date instead
-        #if [[ ${MODE} = "personal" ]]; then
-        #    unset SHA
-        #    DATE="-$(date +%Y%m%d-%H%M)"
-        #fi
 
     # If there are uncommitted changes, mark as dirty
     if [[ $( git diff-index --name-only HEAD ) ]]; then
@@ -341,29 +284,16 @@ function generate_version() {
         LOCALVERSION="${LOCALVERSION}${DIRTY}"
     fi
 
-    # Generate first line variable
-    # CONFIG_LOCALVERSION_AUTO is disabled
-    #FIRST_LINE="${KVER}${CONFIG_LOCALVERSION}${LOCALVERSION}"
-
     # If REVISION exists, use it for the file
     if [[ -n ${REVISION} ]]; then
         REVISION_FOR_FILE=".${MODE::1}${REVISION}"
-        RVER=$(git tag | wc -l)
 
         # If REVISION is greater than or equal to 1, pass it to the build system
         [[ ${REVISION} -ge 1 ]] && KBUILD_BUILD_VERSION=${REVISION}
     fi
 
-    # Generate second line variable
-    SECOND_LINE="$(whoami)@$(uname -n) #${KBUILD_BUILD_VERSION:-1}"
-
-    # Generate third line variable
-    #THIRD_LINE="$(date)"
-    #DATE="-$(date +%Y%m%d)"
-    #DATE="-$(date +%Y%m%d-%H%M)"
-
     # Export KERNEL_NAME based on the above information
-    KERNEL_NAME="${CONFIG_KERNELNAMEZIP}${LOCALVERSION_ZIP}${VERSION_TEXT}${BETA_TEXT}${REVISION_FOR_FILE}${DATE}"
+    KERNEL_NAME="${CONFIG_KERNELNAMEZIP}${LOCALVERSION_ZIP}${VERSION_TEXT}${REVISION_FOR_FILE}${DATE}"
 
     UNSIGNED_ZIP=${KERNEL_NAME}-unsigned.zip
     SIGNED_ZIP=${KERNEL_NAME}.zip
@@ -404,7 +334,7 @@ header "COMPILING KERNEL"
 parse_parameters "${@}"
 device_flags
 clean_up
-cd ${SOURCE_FOLDER}
+cd "${SOURCE_FOLDER}" || exit
 generate_variables
 # Generate variables such as versions
 generate_version
