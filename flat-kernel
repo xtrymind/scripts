@@ -14,7 +14,6 @@ KERNELDIR=${HOME}/local/kernel
 SOURCE_FOLDER=${KERNELDIR}/mido
 OUT_FOLDER=${SOURCE_FOLDER}/out
 BIN_FOLDER=${HOME}/bin
-TC_FOLDER=${HOME}/toolchains
 
 # variable
 ARCHITECTURE=arm64
@@ -159,7 +158,6 @@ function make_wrapper_gcc() {
          ARCH=${ARCHITECTURE} \
          CROSS_COMPILE="${CCACHE} ${GCC}" \
          KBUILD_BUILD_VERSION="${KBUILD_BUILD_VERSION}" \
-         KBUILD_BUILD_TIMESTAMP="${TIMESTAMP}" \
          LOCALVERSION="${LOCALVERSION}" \
          O="${OUT_FOLDER}" \
          "${@}"
@@ -167,7 +165,7 @@ function make_wrapper_gcc() {
 
 # Make wrapper for make function for Clang
 function make_wrapper_clang() {
-	LD_LIBRARY_PATH="${CLANG_LD_PATH}:${LD_LIBARY_PATH}" \
+    LD_LIBRARY_PATH="${CLANG_LD_PATH}:${LD_LIBARY_PATH}" \
     make "${JOBS_FLAG}" \
          ARCH=${ARCHITECTURE} \
          CC="${CCACHE} ${CLANG}" \
@@ -176,7 +174,6 @@ function make_wrapper_clang() {
          HOSTCC="${CCACHE} ${CLANG}" \
          KBUILD_COMPILER_STRING="${CLANG_VERSION}" \
          KBUILD_BUILD_VERSION="${KBUILD_BUILD_VERSION}" \
-         KBUILD_BUILD_TIMESTAMP="${TIMESTAMP}" \
          KCFLAGS="${KCFLAGS}" \
          LLVM_DIS="${LLVM_DIS}" \
          LOCALVERSION="${LOCALVERSION}" \
@@ -291,9 +288,9 @@ function generate_version() {
     # This is set in the defconfig
 	CONFIG_KERNELNAMEZIP="flatKernel"
     LOCALVERSION_ZIP="-${DEVICE_NAME_FILE}"
-	
-	# date in utc
-	TIMESTAMP=$(date -u)
+
+    # date in utc
+    TIMESTAMP=$(date -u)
 
     # Add version if present
     if [[ -n ${VERSION} ]]; then
