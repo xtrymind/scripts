@@ -2,29 +2,28 @@
 
 # check if bash or zsh
 if [[ ${0} = bash ]]; then
-	source ${HOME}/scripts/git/git-prompt.sh
-	source ${HOME}/scripts/git/git-completion.bash
-	source ${HOME}/scripts/git/git.plugin.bash
-	export GIT_PS1_SHOWDIRTYSTATE=1
-	export GIT_PS1_SHOWUPSTREAM=auto
-	export PROMPT_COMMAND='__git_ps1 "\[\033[01;34m\]\u@\h \[\033[01;32m\]\w\[\033[01;31m\]" " \[\033[39m\]\$\[\033[0m\] "'
+    source ${HOME}/dotfiles/scripts/git-prompt.sh
+    export GIT_PS1_SHOWDIRTYSTATE=1
+    export GIT_PS1_SHOWUPSTREAM=auto
+    export PROMPT_COMMAND='__git_ps1 "\[\033[01;34m\]\u@\h \[\033[01;32m\]\w\[\033[01;31m\]" " \[\033[39m\]\$\[\033[0m\] "'
 fi
 
-if [[ "$(command -v hub)" ]]; then
-    alias git='hub';
-fi
+# Location of "scripts" folder
+SCRIPTS_FOLDER="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/scripts"
 
-# alias Arch Linux
+# Directory
+LOS=${HOME}/android/lineage
+TC_FOLDER=${HOME}/toolchains
+FOLDER_MAGISK=${HOME}/repo/magisk-files
+
+# alias
 alias inst="sudo pacman -S --noconfirm "
 alias rem="sudo pacman -Rns "
 alias upd="sudo pacman -Syu --noconfirm "
 alias ref="sudo reflector --latest 200 --protocol http --protocol https --sort rate --save /etc/pacman.d/mirrorlist"
 alias cu="checkupdates"
-
-# moar alias
+alias hos="python updateHostsFile.py --replace --extensions fakenews gambling --flush-dns-cache"
 alias p1="patch -p1"
-alias fd="find -iname "
-alias ag="find . -type f | xargs fgrep "
 
 # Colors
 BLINK_RED="\033[05;31m"
@@ -36,46 +35,91 @@ RST="\033[0m"
 YLW="\033[01;33m"
 
 # Number of make threads
-THREADS=$(nproc --all)
+THREADS=$(($(nproc --all) + 1))
 JOBS_FLAG="-j${THREADS}"
 
 # Common ccache variable
 CCACHE=$(command -v ccache)
 
-# Directory
-KERNELDIR="${HOME}/kernel";
-LOS=${HOME}/android/lineage
-
 if [ -d "$HOME/bin" ] ; then
     PATH="$HOME/bin:$PATH"
 fi
 
-# toolchain
-CC_49=${HOME}/kernel/toolchain/aarch64-linux-gnu-4.x-linaro-20180409/bin/aarch64-linux-gnu-
-CC_7=${HOME}/kernel/toolchain/aarch64-linux-gnu-7.x-linaro-20180411/bin/aarch64-linux-gnu-
-
 # Use ccache
 export USE_CCACHE=1;
 if [[ -z "${CCACHE_DIR}" ]]; then
-    export CCACHE_DIR="${HOME}/.ccache";
+    export CCACHE_DIR="${HOME}/local/.ccache";
 fi
 
+# Sync repo
 function syncc() {
     repo sync -j4 --force-sync -c --no-clone-bundle --no-tags --optimized-fetch --prune
 }
 
+# Kill jack after build rom
 function sjack() {
     . prebuilts/sdk/tools/jack-admin stop-server
 }
 
+# Build rom
 function rom(){
-	export ANDROID_JACK_VM_ARGS="-Dfile.encoding=UTF-8 -XX:+TieredCompilation -Xmx4G"
-	export PATH="/opt/python2:$PATH"
-	export LC_ALL=C
+    export ANDROID_JACK_VM_ARGS="-Dfile.encoding=UTF-8 -XX:+TieredCompilation -Xmx4G"
+    export PATH="/opt/python2:$PATH"
+    export LC_ALL=C
 }
 
-function localcfg(){
-	make LSMOD=${HOME}/.config/modprobed.db localmodconfig
+# Create config based on modprobed.db
+function localmodcfg(){
+    make LSMOD=${HOME}/.config/modprobed.db localmodconfig
+}
+
+# Alias for echo to print escape codes
+function echo() {
+    command echo -e "${@}"
+}
+
+# Prints a formatted header to point out what is being done to the user
+function header() {
+    if [[ -n ${2} ]]; then
+        COLOR=${2}
+    else
+        COLOR=${RED}
+    fi
+    echo "${COLOR}"
+    echo "====$(for i in $(seq ${#1}); do echo "=\c"; done)===="
+    echo "==  ${1}  =="
+    # SC2034: i appears unused. Verify it or export it.
+    # shellcheck disable=SC2034
+    echo "====$(for i in $(seq ${#1}); do echo "=\c"; done)===="
+    echo "${RST}"
+}
+
+# Enforces the value needed for two-part flags
+function enforce_value() {
+    [[ ${#} -lt 1 ]] && die "A additional value is needed for one of the flags passed to this script!"
+}
+
+# Prints an error in bold red
+function display_error() {
+    echo
+    echo "${RED}${1}${RST}"
+    [[ -z ${2} ]] && echo
+}
+
+# Prints an error in bold red and exits the script
+function die() {
+    display_error "${@}"
+    if type -p pre_exit_commands; then
+        pre_exit_commands
+    fi
+    exit
+}
+
+# Prints a warning in bold yellow
+function warn() {
+    echo
+    echo "${YLW}${1}${RST}"
+    [[ -z ${2} ]] && echo
 }
 
 # Formats the time
@@ -110,4 +154,9 @@ function format_time() {
     fi
 
     echo "${TIME_STRING}"
+}
+
+# Convert a file location to web link
+function web_link_gitlab() {
+    echo "${1}" | sed s/"$(echo "${FOLDER_MAGISK}" | sed 's/\//\\\//g')"/https:\\/\\/gitlab.com\\/xtrymind\\/magisk-files\\/raw\\/master/
 }
