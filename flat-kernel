@@ -128,27 +128,27 @@ function generate_variables() {
     [[ -z ${GCC_BIN} ]] && die "64-bit GCC toolchain could not be found!"
     GCC=${GCC_BIN%gcc}
 
-	# Handle Clang
+    # Handle Clang
     if [[ ${COMPILER} = "clang" ]]; then
-		CLANG=${CLANG_FOLDER}/bin/clang
-		CLANG_VERSION=$(${CLANG} --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
+        CLANG=${CLANG_FOLDER}/bin/clang
+        CLANG_VERSION=$(${CLANG} --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
 
-		CLANG_LD_PATH=${CLANG_FOLDER}/lib
-		LLVM_DIS=${CLANG_FOLDER}/bin/llvm-dis
-		if [[ -n ${PERSONAL} ]]; then
-			KCFLAGS="-mllvm -polly \
-					 -mllvm -polly-run-dce \
-					 -mllvm -polly-run-inliner \
-					 -mllvm -polly-opt-fusion=max \
-					 -mllvm -polly-ast-use-context \
-					 -mllvm -polly-vectorizer=stripmine \
-					 -mllvm -polly-detect-keep-going"
-		fi
-	fi
+        CLANG_LD_PATH=${CLANG_FOLDER}/lib
+        LLVM_DIS=${CLANG_FOLDER}/bin/llvm-dis
+        if [[ -n ${PERSONAL} ]]; then
+            KCFLAGS="-mllvm -polly \
+                     -mllvm -polly-run-dce \
+                     -mllvm -polly-run-inliner \
+                     -mllvm -polly-opt-fusion=max \
+                     -mllvm -polly-ast-use-context \
+                     -mllvm -polly-vectorizer=stripmine \
+                     -mllvm -polly-detect-keep-going"
+        fi
+    fi
 
     # Handle AnyKernel2 Folder
     if [[ -n ${AK} ]]; then
-		ANYKERNEL2_FOLDER=${KERNELDIR}/${AK}
+        ANYKERNEL2_FOLDER=${KERNELDIR}/${AK}
     fi
 }
 
@@ -187,10 +187,10 @@ function kmake() {
 }
 
 function backup_version(){
-	cp -f "${OUT_FOLDER}"/.version /tmp/
-	git clean -dfx
-	mkdir "${OUT_FOLDER}"
-	cp /tmp/.version "${OUT_FOLDER}"
+    cp -f "${OUT_FOLDER}"/.version /tmp/
+    git clean -dfx
+    mkdir "${OUT_FOLDER}"
+    cp /tmp/.version "${OUT_FOLDER}"
 }
 
 # Build kernel image
@@ -273,10 +273,10 @@ function package_zip() {
 # Clean up
 function clean_up() {
     # Clean AnyKernel2 folder if building a zip
-	if [[ -z ${IMAGE_ONLY} ]]; then
-		cd "${ANYKERNEL2_FOLDER}" || die "AnyKernel2 source is missing!"
-		echo "Cleaning at ${PWD}"
-		git clean -xfd
+    if [[ -z ${IMAGE_ONLY} ]]; then
+        cd "${ANYKERNEL2_FOLDER}" || die "AnyKernel2 source is missing!"
+        echo "Cleaning at ${PWD}"
+        git clean -xfd
     fi
 
     # enter kernel directory
@@ -286,7 +286,7 @@ function clean_up() {
 # Setup compilation
 function generate_version() {
     # This is set in the defconfig
-	CONFIG_KERNELNAMEZIP="flatKernel"
+    CONFIG_KERNELNAMEZIP="flatKernel"
     LOCALVERSION_ZIP="-${DEVICE_NAME_FILE}"
 
     # date in utc
@@ -297,8 +297,8 @@ function generate_version() {
         VERSION_TEXT="-v${VERSION}"
         #LOCALVERSION="${LOCALVERSION}${VERSION_TEXT}"
     else
-		RV=$(($(cat "${OUT_FOLDER}"/.version)+1))
-		VERSION_TEXT="-r${RV}"
+        RV=$(($(cat "${OUT_FOLDER}"/.version)+1))
+        VERSION_TEXT="-r${RV}"
     fi
 
     # Add hash information to the file for debugging with 12 hash length
