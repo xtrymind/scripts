@@ -7,28 +7,11 @@
 #
 # Kernel compilation script
 
-source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/common"
-
-# directory
-KERNELDIR=${HOME}/local/kernel
-SOURCE_FOLDER=${KERNELDIR}/mido
-OUT_FOLDER=${SOURCE_FOLDER}/out
-BIN_FOLDER=${HOME}/bin
-
-# variable
-ARCHITECTURE=arm64
-DEVICE_NAME_GITHUB=mido
-KERNEL_BRANCH=flat
-
-# Common ccache variable
-CCACHE=$(command -v ccache)
-
-# Start tracking time
-START=$(date +"%s")
-
-# Number of make threads
-THREADS=$(nproc --all)
-JOBS_FLAG="-j${THREADS}"
+###############
+#             #
+#  FUNCTIONS  #
+#             #
+###############
 
 # Gather parameters
 function parse_parameters() {
@@ -119,6 +102,9 @@ function device_flags() {
             DEVICE_NAME_FILE=${DEVICE^}
             DEVICE_NAME_GITHUB=mido
 
+            # variable
+            KERNEL_BRANCH=flat
+
             [[ -z ${GCC_FOLDER} ]] && GCC_FOLDER=${TC_FOLDER}/aarch64-linux-gnu_8.x
             [[ -z ${CLANG_FOLDER} ]]&& CLANG_FOLDER=${TC_FOLDER}/android-clang-8.x/
             ;;
@@ -130,6 +116,13 @@ function device_flags() {
 
 # Set up other variables
 function generate_variables() {
+    # Folders
+    SOURCE_FOLDER=${KERNEL_FOLDER}/${DEVICE_NAME_GITHUB}
+    OUT_FOLDER=${SOURCE_FOLDER}/out
+
+    # Compilation variables
+    ARCHITECTURE=arm64
+
     # Normal 64-bit GCC toolchain
     if [[ -z ${GCC_BINARY} ]]; then
         if [[ ! -d ${GCC_FOLDER} ]]; then
@@ -161,7 +154,7 @@ function generate_variables() {
 
     # Handle AnyKernel2 Folder
     if [[ -n ${AK} ]]; then
-        ANYKERNEL2_FOLDER=${KERNELDIR}/${AK}
+        ANYKERNEL2_FOLDER=${KERNEL_FOLDER}/${AK}
     fi
 }
 
@@ -370,6 +363,20 @@ function generate_changelog() {
     #[[ ${STABLE} ]] && cp "${SHORT_CHANGELOG}" "${FILE_MOVE}/.changelog"
 }
 
+################
+#              #
+# SCRIPT START #
+#              #
+################
+
+source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/common"
+
+# Start tracking time
+START=$(date +"%s")
+
+#################
+# MAKING KERNEL #
+#################
 
 header "COMPILING KERNEL"
 
