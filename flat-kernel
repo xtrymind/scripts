@@ -129,7 +129,7 @@ function generate_variables() {
             GCC_FOLDER=${TC_FOLDER}/${GCC_FOLDER}
             [[ ! -d ${GCC_FOLDER} ]] && die "Invalid GCC folder specified!"
         fi
-        GCC=$(find "${GCC_FOLDER}/bin" \( -type f -o -type l \) -name '*-gcc' | head -n1)
+        GCC_BIN=$(find "${GCC_FOLDER}/bin" \( -type f -o -type l \) -name '*-gcc' | head -n1)
     fi
     [[ -z ${GCC_BIN} ]] && die "64-bit GCC toolchain could not be found!"
     GCC=${GCC_BIN%gcc}
