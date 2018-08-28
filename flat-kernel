@@ -54,6 +54,12 @@ function parse_parameters() {
 
                 DEFCONFIG=${1} ;;
 
+            # 64-bit GCC toolchain to use for compiling
+            "-gt"|"--gcc-toolchain")
+                shift && enforce_value "${@}"
+
+                GCC_FOLDER=${1} ;;
+
             # Do not package kernel image
             "-io"|"--image-only")
                 IMAGE_ONLY=true ;;
@@ -124,7 +130,14 @@ function device_flags() {
 
 # Set up other variables
 function generate_variables() {
-    GCC_BIN=$(find "${GCC_FOLDER}/bin" \( -type f -o -type l \) -name '*-gcc' | head -n1)
+    # Normal 64-bit GCC toolchain
+    if [[ -z ${GCC_BINARY} ]]; then
+        if [[ ! -d ${GCC_FOLDER} ]]; then
+            GCC_FOLDER=${TC_FOLDER}/${GCC_FOLDER}
+            [[ ! -d ${GCC_FOLDER} ]] && die "Invalid GCC folder specified!"
+        fi
+        GCC=$(find "${GCC_FOLDER}/bin" \( -type f -o -type l \) -name '*-gcc' | head -n1)
+    fi
     [[ -z ${GCC_BIN} ]] && die "64-bit GCC toolchain could not be found!"
     GCC=${GCC_BIN%gcc}
 
