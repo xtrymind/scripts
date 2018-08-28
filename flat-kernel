@@ -25,6 +25,12 @@ function parse_parameters() {
 
                 AK=${1} ;;
 
+            # Branch to compile
+            "-b"|"--branch")
+                shift && enforce_value "${@}"
+
+                KERNEL_BRANCH=${1} ;;
+
             # Compiler to use
             "-cc"|"--compiler")
                 shift && enforce_value "${@}"
@@ -103,7 +109,7 @@ function device_flags() {
             DEVICE_NAME_GITHUB=mido
 
             # variable
-            KERNEL_BRANCH=flat
+            #KERNEL_BRANCH=flat
 
             [[ -z ${GCC_FOLDER} ]] && GCC_FOLDER=${TC_FOLDER}/aarch64-linux-gnu_8.x
             [[ -z ${CLANG_FOLDER} ]]&& CLANG_FOLDER=${TC_FOLDER}/android-clang-8.x/
@@ -287,6 +293,11 @@ function clean_up() {
 
     # enter kernel directory
     cd "${SOURCE_FOLDER}" || die "Kernel source is missing!"
+    if [[ -n ${KERNEL_BRANCH} ]]; then
+        if [[ -z $(git status | ag "bisec|rebas") ]]; then
+            git checkout ${HIDDEN_COMMANDS:+ "-q"} "${KERNEL_BRANCH}" || die "${KERNEL_BRANCH} doesn't exist!"
+        fi
+    fi
 }
 
 # Setup compilation
