@@ -7,7 +7,7 @@
 #
 # Kernel compilation script
 
-source ${HOME}/dotfiles/common
+source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/common"
 
 # directory
 KERNELDIR=${HOME}/local/kernel

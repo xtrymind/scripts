@@ -7,7 +7,7 @@
 # Builds a Magisk zip and APK then sets up a JSON file
 
 # Source common functions
-source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/../common"
+source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/common"
 trap 'echo; die "Manually aborted!"' SIGINT SIGTERM
 
 # Parse parameters
