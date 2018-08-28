@@ -156,7 +156,12 @@ function format_time() {
     echo "${TIME_STRING}"
 }
 
-# Convert a file location to web link
+# Convert a file location to gitlab web link
 function web_link_gitlab() {
     echo "${1}" | sed s/"$(echo "${FOLDER_MAGISK}" | sed 's/\//\\\//g')"/https:\\/\\/gitlab.com\\/xtrymind\\/magisk-files\\/raw\\/master/
+}
+
+# Convert a file location to github web link
+function web_link_github() {
+    echo "${1}" | sed s/"$(echo "${FOLDER_MAGISK}" | sed 's/\//\\\//g')"/https:\\/\\/raw.githubusercontent.com\\/xtrymind\\/magisk-files\\/master/
 }
