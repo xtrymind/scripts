@@ -65,6 +65,10 @@ function parse_parameters() {
 
                 REVISION=${1} ;;
 
+            # Time to show in kernel version
+            "-ut"|"--utime")
+                UTCTIME=TRUE ;;
+
             # Version number
             "-v"|"--version")
                 shift && enforce_value "${@}"
@@ -162,6 +166,11 @@ function generate_variables() {
     if [[ -n ${AK} ]]; then
         ANYKERNEL2_FOLDER=${KERNEL_FOLDER}/${AK}
     fi
+
+    # date in utc
+    if [[ -n ${UTCTIME} ]]; then
+        TIMESTAMP=$(date -u)
+    fi
 }
 
 # Make wrapper for make function for GCC
@@ -170,6 +179,7 @@ function make_wrapper_gcc() {
          ARCH=${ARCHITECTURE} \
          CROSS_COMPILE="${CCACHE} ${GCC}" \
          KBUILD_BUILD_VERSION="${KBUILD_BUILD_VERSION}" \
+         KBUILD_BUILD_TIMESTAMP="${TIMESTAMP}" \
          LOCALVERSION="${LOCALVERSION}" \
          O="${OUT_FOLDER}" \
          "${@}"
@@ -186,6 +196,7 @@ function make_wrapper_clang() {
          HOSTCC="${CCACHE} ${CLANG}" \
          KBUILD_COMPILER_STRING="${CLANG_VERSION}" \
          KBUILD_BUILD_VERSION="${KBUILD_BUILD_VERSION}" \
+         KBUILD_BUILD_TIMESTAMP="${TIMESTAMP}" \
          KCFLAGS="${KCFLAGS}" \
          LLVM_DIS="${LLVM_DIS}" \
          LOCALVERSION="${LOCALVERSION}" \
@@ -305,9 +316,6 @@ function generate_version() {
     # This is set in the defconfig
     CONFIG_KERNELNAMEZIP="flatKernel"
     LOCALVERSION_ZIP="-${DEVICE_NAME_FILE}"
-
-    # date in utc
-    TIMESTAMP=$(date -u)
 
     # Add version if present
     if [[ -n ${VERSION} ]]; then
