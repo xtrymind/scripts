@@ -109,7 +109,7 @@ function device_flags() {
 
             [[ -z ${AK} ]] && AK="AnyKernel2"
 
-            DEVICE_NAME_FILE=${DEVICE^}
+            DEVICE_NAME_FILE=${DEVICE}
             DEVICE_NAME_GITHUB=mido
 
             # variable
@@ -314,7 +314,7 @@ function clean_up() {
 # Setup compilation
 function generate_version() {
     # This is set in the defconfig
-    CONFIG_KERNELNAMEZIP="flatKernel"
+    CONFIG_KERNELNAMEZIP="fk"
     LOCALVERSION_ZIP="-${DEVICE_NAME_FILE}"
 
     # Add version if present
