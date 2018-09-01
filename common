@@ -26,6 +26,7 @@ alias ref="sudo reflector --latest 200 --protocol http --protocol https --sort r
 alias cu="checkupdates"
 alias hos="python updateHostsFile.py --replace --extensions fakenews gambling --flush-dns-cache"
 alias p1="patch -p1"
+alias mzip='for dir in */; do base=$(basename "$dir"); zip -r9 "${base}.cbz" "$dir"; done'
 
 # Colors
 BLINK_RED="\033[05;31m"
