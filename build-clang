@@ -108,6 +108,9 @@ function parse_parameters() {
     # The master branch is compiled by default
     [[ -z ${VERSION} ]] && VERSION=${MASTER_VERSION}
 
+    # Default parameters
+    [[ -z ${VENDOR} ]] && VENDOR="android"
+
     # Folder that will hold the final compiled toolchain
     [[ -z ${INSTALL_FOLDER} ]] && INSTALL_FOLDER=${TC_FOLDER}/${VENDOR:+"${VENDOR,,}-"}clang-${VERSION}.x${TEST:+"-test"}
 
