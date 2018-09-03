@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Copyright (C) 2018 Dede Dindin Qudsy
+#
+# Update host from steven black repo https://github.com/StevenBlack/hosts
+
+# Source common functions
+source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/common"
+trap 'echo; die "Manually aborted!"' SIGINT SIGTERM
+
+# Existence sanity checks
+[[ ! -f ${HOME}/github/myhosts ]] && die "config.prop not found!"
+[[ ! -f ${HOME}/github/whitelist ]] && die "keystore file not found!"
+cd "${HOME}/github/hosts" || die "Magisk folder doesn't exist, please clone!"
+
+# Update the repo
+header "Updating repos"
+git fetch origin
+git reset --hard origin/master
+
+# Copy additional host
+header "Copy Additional host and whitelist"
+cp -v ${HOME}/github/myhosts myhosts
+cp -v ${HOME}/github/whitelist whitelist
+
+# Updating Host
+header "Updating Host File"
+python updateHostsFile.py --auto --replace --extensions fakenews gambling --flush-dns-cache
