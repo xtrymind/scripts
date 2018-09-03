@@ -121,6 +121,7 @@ function device_flags() {
             #KERNEL_BRANCH=flat
 
             [[ -z ${GCC_FOLDER} ]] && GCC_FOLDER=${TC_FOLDER}/aarch64-linux-gnu_8.x
+            [[ -z ${GCC_32_BIT_FOLDER} ]] && GCC_32_BIT_FOLDER=${TC_FOLDER}/arm-linux-gnueabi_8.x
             [[ -z ${CLANG_FOLDER} ]]&& CLANG_FOLDER=${TC_FOLDER}/android-clang-8.x/
             ;;
 
@@ -148,6 +149,19 @@ function generate_variables() {
     fi
     [[ -z ${GCC_BIN} ]] && die "64-bit GCC toolchain could not be found!"
     GCC=${GCC_BIN%gcc}
+
+    # 32-bit GCC toolchain if required
+    if [[ -n ${GCC_32_BIT} || -n ${GCC_32_BIT_FOLDER} ]]; then
+        if [[ -z ${GCC_32_BIT} ]]; then
+            if [[ ! -d ${GCC_32_BIT_FOLDER} ]]; then
+                GCC_32_BIT_FOLDER=${TC_FOLDER}/${GCC_32_BIT_FOLDER}
+                [[ ! -d ${GCC_32_BIT_FOLDER} ]] && die "Invalid GCC folder specified!"
+            fi
+            GCC_32_BIN=$(find "${GCC_32_BIT_FOLDER}/bin" \( -type f -o -type l \) -name '*-gcc' | head -n1)
+        fi
+        [[ -z ${GCC_32_BIN} ]] && die "32-bit GCC toolchain could not be found!"
+        GCC_32_BIT=${GCC_32_BIN%gcc}
+    fi
 
     # Handle Clang
     if [[ ${COMPILER} = "clang" ]]; then
@@ -183,6 +197,7 @@ function make_wrapper_gcc() {
     make "${JOBS_FLAG}" \
          ARCH=${ARCHITECTURE} \
          CROSS_COMPILE="${CCACHE} ${GCC}" \
+         CROSS_COMPILE_ARM32="${CCACHE} ${GCC_32_BIT}" \
          KBUILD_BUILD_VERSION="${KBUILD_BUILD_VERSION}" \
          KBUILD_BUILD_TIMESTAMP="${TIMESTAMP}" \
          LOCALVERSION="${LOCALVERSION}" \
@@ -198,6 +213,7 @@ function make_wrapper_clang() {
          CC="${CCACHE} ${CLANG}" \
          CLANG_TRIPLE=aarch64-linux-gnu- \
          CROSS_COMPILE="${GCC}" \
+         CROSS_COMPILE_ARM32="${GCC_32_BIT}" \
          HOSTCC="${CCACHE} ${CLANG}" \
          KBUILD_COMPILER_STRING="${CLANG_VERSION}" \
          KBUILD_BUILD_VERSION="${KBUILD_BUILD_VERSION}" \
