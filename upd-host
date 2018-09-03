@@ -11,9 +11,9 @@ source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/c
 trap 'echo; die "Manually aborted!"' SIGINT SIGTERM
 
 # Existence sanity checks
-[[ ! -f ${HOME}/github/myhosts ]] && die "config.prop not found!"
-[[ ! -f ${HOME}/github/whitelist ]] && die "keystore file not found!"
-cd "${HOME}/github/hosts" || die "Magisk folder doesn't exist, please clone!"
+[[ ! -f ${HOME}/github/myhosts ]] && die "Additional host not found!"
+[[ ! -f ${HOME}/github/whitelist ]] && die "Whitelist file not found!"
+cd "${HOME}/github/hosts" || die "Hosts folder doesn't exist, please clone!"
 
 # Update the repo
 header "Updating repos"
