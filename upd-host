@@ -11,8 +11,6 @@ source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/c
 trap 'echo; die "Manually aborted!"' SIGINT SIGTERM
 
 # Existence sanity checks
-[[ ! -f ${HOME}/github/myhosts ]] && die "Additional host not found!"
-[[ ! -f ${HOME}/github/whitelist ]] && die "Whitelist file not found!"
 cd "${HOME}/github/hosts" || die "Hosts folder doesn't exist, please clone!"
 
 # Update the repo
@@ -21,9 +19,10 @@ git fetch origin
 git reset --hard origin/master
 
 # Copy additional host
-header "Copy Additional host and whitelist"
-cp -v ${HOME}/github/myhosts myhosts
-cp -v ${HOME}/github/whitelist whitelist
+header "Copy Additional host, blacklist, and whitelist if exist"
+[[ -f ${HOME}/github/myhosts ]] && cp -v ${HOME}/github/myhosts .
+[[ -f ${HOME}/github/whitelist ]] && cp -v ${HOME}/github/whitelist .
+[[ -f ${HOME}/github/blacklist ]] && cp -v ${HOME}/github/blacklist .
 
 # Updating Host
 header "Updating Host File"
