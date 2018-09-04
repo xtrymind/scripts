@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Copyright (C) 2018 Dede Dindin Qudsy
+#
+# Kernel compilation script
+
+###############
+#             #
+#  FUNCTIONS  #
+#             #
+###############
+
+# 'cp -v' alias
+function cp() {
+    command cp -v "${@}"
+}
+
+# 'rm -v' alias
+function rm() {
+    command rm -v "${@}"
+}
+
+# Set up other variables
+function generate_variables() {
+    # Folders
+    SOURCE_FOLDER=${HOME}/local/linux-kernel/linux/
+    
+    # Number of make threads
+    THREADS=$(($(nproc --all) + 1))
+    JOBS_FLAG="-j${THREADS}"
+    
+    LOCALVERSION="-flat"
+}
+
+# Clean up
+function clean_up() {
+    # Only checkout if kernel_branch exists and we aren't bisecting or rebasing
+    cd "${SOURCE_FOLDER}" || die "Kernel source is missing!"
+    make clean && make mrproper
+}
+
+function compile(){
+    cp ${HOME}/local/linux-kernel/defconfig .config
+    make prepare
+    time make "${JOBS_FLAG}"
+    KVER=$(cat include/config/kernel.release)
+}
+
+# Clean up
+function clean_up_installed() {
+    sudo rm -f /boot/vmlinuz-linux${LOCALVERSION}
+    sudo rm -rf /lib/modules/*"${LOCALVERSION}"
+}
+
+function installkernel(){
+    sudo make modules_install
+    sudo cp -v arch/x86_64/boot/bzImage /boot/vmlinuz-linux${LOCALVERSION}
+    sudo mkinitcpio -k ${KVER} -g /boot/initramfs-linux${LOCALVERSION}.img
+}
+
+source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/common"
+
+generate_variables
+clean_up
+compile
+clean_up_installed
+installkernel
