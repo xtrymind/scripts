@@ -22,16 +22,24 @@ function rm() {
     command rm -v "${@}"
 }
 
-# Set up other variables
+# Set variables
 function generate_variables() {
     # Folders
     SOURCE_FOLDER=${HOME}/local/linux-kernel/linux/
     
-    # Number of make threads
-    THREADS=$(($(nproc --all) + 1))
-    JOBS_FLAG="-j${THREADS}"
-    
     LOCALVERSION="-flat"
+
+    MODEL=$(lscpu | grep "Model name" | sed -r 's/Model name:\s{1,}(.*) CPU .*z\s*/\1/g' | cut -c22-)
+    case ${MODEL} in
+        3217U)
+            DEFCONFIG="flat_laptop_defconfig" ;;
+
+        2500)
+            DEFCONFIG="flat_desktop_defconfig" ;;
+
+        *)
+            die "Invalid devices" ;;
+    esac
 }
 
 # Clean up
@@ -41,29 +49,35 @@ function clean_up() {
     make clean && make mrproper
 }
 
+# Compile kernel
 function compile(){
-    cp ${HOME}/local/linux-kernel/defconfig .config
-    make prepare
+    make ${DEFCONFIG} prepare
     time make "${JOBS_FLAG}"
+
+    # Export kernel version
     KVER=$(cat include/config/kernel.release)
 }
 
-# Clean up
-function clean_up_installed() {
-    sudo rm -f /boot/vmlinuz-linux${LOCALVERSION}
-    sudo rm -rf /lib/modules/*"${LOCALVERSION}"
+# Remove old kernel & modules
+function remove_old_kernel() {
+    sh -c sudo rm -f /boot/vmlinuz-linux${LOCALVERSION}
+    sh -c sudo rm -rf /lib/modules/*${LOCALVERSION}
 }
 
+# Install new kernel
 function installkernel(){
     sudo make modules_install
-    sudo cp -v arch/x86_64/boot/bzImage /boot/vmlinuz-linux${LOCALVERSION}
-    sudo mkinitcpio -k ${KVER} -g /boot/initramfs-linux${LOCALVERSION}.img
+    sudo dkms autoinstall -k "${KVER}"
+    sh -c sudo cp arch/x86_64/boot/bzImage /boot/vmlinuz-linux${LOCALVERSION}
+    sh -c sudo cp System.map /boot/System.map
+    sudo mkinitcpio -k "${KVER}" -g /boot/initramfs-linux${LOCALVERSION}.img
 }
 
+# shellcheck disable=SC1090
 source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/common"
 
 generate_variables
 clean_up
 compile
-clean_up_installed
+remove_old_kernel
 installkernel
