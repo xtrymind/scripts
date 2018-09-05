@@ -12,39 +12,34 @@
 #             #
 ###############
 
-# 'cp -v' alias
-function cp() {
-    command cp -v "${@}"
-}
-
-# 'rm -v' alias
-function rm() {
-    command rm -v "${@}"
-}
-
 # Set variables
 function generate_variables() {
-    # Folders
+    # Source folders
     SOURCE_FOLDER=${HOME}/local/linux-kernel/linux/
-    
-    LOCALVERSION="-flat"
 
-    MODEL=$(lscpu | grep "Model name" | sed -r 's/Model name:\s{1,}(.*) CPU .*z\s*/\1/g' | cut -c22-)
+    # Kernel name
+    LOCALVERSION="flat"
+
+    # Check on laptop or desktop
+    MODEL=$(lscpu | grep "Model name" | sed -r 's/Model name:\s{1,}(.*) CPU .*z\s*/\1/g' | cut -c19-)
     case ${MODEL} in
-        3217U)
+        i3-3217U)
             DEFCONFIG="flat_laptop_defconfig" ;;
 
-        2500)
+        i5-2500)
             DEFCONFIG="flat_desktop_defconfig" ;;
 
         *)
             die "Invalid devices" ;;
     esac
+
+    # Check if have dkms
+    if command -v dkms > /dev/null 2>&1; then HAVE_DKMS=true; fi
 }
 
 # Clean up
 function clean_up() {
-    # Only checkout if kernel_branch exists and we aren't bisecting or rebasing
+    # Only cd if kernel source exist
     cd "${SOURCE_FOLDER}" || die "Kernel source is missing!"
     make clean && make mrproper
 }
@@ -52,32 +47,45 @@ function clean_up() {
 # Compile kernel
 function compile(){
     make ${DEFCONFIG} prepare
-    time make "${JOBS_FLAG}"
+    make "${JOBS_FLAG}"
 
     # Export kernel version
     KVER=$(cat include/config/kernel.release)
 }
 
 # Remove old kernel & modules
-function remove_old_kernel() {
-    sh -c sudo rm -f /boot/vmlinuz-linux${LOCALVERSION}
-    sh -c sudo rm -rf /lib/modules/*${LOCALVERSION}
+function remove() {
+    sudo rm -f /boot/vmlinuz-linux-${LOCALVERSION}
+    sudo rm -rf /lib/modules/*${LOCALVERSION}*
 }
 
 # Install new kernel
-function installkernel(){
+function install(){
     sudo make modules_install
-    sudo dkms autoinstall -k "${KVER}"
-    sh -c sudo cp arch/x86_64/boot/bzImage /boot/vmlinuz-linux${LOCALVERSION}
-    sh -c sudo cp System.map /boot/System.map
-    sudo mkinitcpio -k "${KVER}" -g /boot/initramfs-linux${LOCALVERSION}.img
+    if [[ -n ${HAVE_DKMS} ]]; then
+        sudo dkms autoinstall -k "${KVER}"
+    fi
+    sudo cp arch/x86_64/boot/bzImage /boot/vmlinuz-linux-${LOCALVERSION}
+    sudo cp System.map /boot/System.map
+    sudo mkinitcpio -k "${KVER}" -g /boot/initramfs-linux-${LOCALVERSION}.img
+}
+
+# Print file info
+function ending_info() {
+    END=$(date +"%s")
+    DURATION=$(format_time "${START}" "${END}")
+    echo "${GRN}DURATION: ${DURATION}${RST}"
 }
 
 # shellcheck disable=SC1090
 source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/common"
 
+# Start tracking time
+START=$(date +"%s")
+
 generate_variables
 clean_up
 compile
-remove_old_kernel
-installkernel
+remove
+install
+ending_info
