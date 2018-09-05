@@ -50,7 +50,7 @@ function compile(){
     make "${JOBS_FLAG}"
 
     # Export kernel version
-    KVER=$(cat include/config/kernel.release)
+    KERVER=$(cat include/config/kernel.release)
 }
 
 # Remove old kernel & modules
@@ -61,9 +61,9 @@ function remove() {
 
 ## Rebuild dkms module
 function rebuild_dkms() {
-    dkms status | sed 's/,//g;s/://g' | awk '{print "--force -m",$1,"-v",$2}' | while read line; do sudo dkms uninstall $line -k "${KVER}"; done
-    dkms status | sed 's/,//g;s/://g' | awk '{print "--force -m",$1,"-v",$2}' | while read line; do sudo dkms build $line -k "${KVER}"; done
-    dkms status | sed 's/,//g;s/://g' | awk '{print "--force -m",$1,"-v",$2}' | while read line; do sudo dkms install $line -k "${KVER}"; done
+    dkms status | sed 's/,//g;s/://g' | awk '{print "--force -m",$1,"-v",$2}' | while read line; do sudo dkms uninstall $line -k "${KERVER}"; done
+    dkms status | sed 's/,//g;s/://g' | awk '{print "--force -m",$1,"-v",$2}' | while read line; do sudo dkms build $line -k "${KERVER}"; done
+    dkms status | sed 's/,//g;s/://g' | awk '{print "--force -m",$1,"-v",$2}' | while read line; do sudo dkms install $line -k "${KERVER}"; done
 }
 
 # Install new kernel
@@ -74,7 +74,7 @@ function install(){
     fi
     sudo cp arch/x86_64/boot/bzImage /boot/vmlinuz-linux-${LOCALVERSION}
     sudo cp System.map /boot/System.map
-    sudo mkinitcpio -k "${KVER}" -g /boot/initramfs-linux-${LOCALVERSION}.img
+    sudo mkinitcpio -k "${KERVER}" -g /boot/initramfs-linux-${LOCALVERSION}.img
 }
 
 # Print file info
