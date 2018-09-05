@@ -59,11 +59,18 @@ function remove() {
     sudo rm -rf /lib/modules/*${LOCALVERSION}*
 }
 
+## Rebuild dkms module
+function rebuild_dkms() {
+    dkms status | sed 's/,//g;s/://g' | awk '{print "--force -m",$1,"-v",$2}' | while read line; do sudo dkms uninstall $line -k "${KVER}"; done
+    dkms status | sed 's/,//g;s/://g' | awk '{print "--force -m",$1,"-v",$2}' | while read line; do sudo dkms build $line -k "${KVER}"; done
+    dkms status | sed 's/,//g;s/://g' | awk '{print "--force -m",$1,"-v",$2}' | while read line; do sudo dkms install $line -k "${KVER}"; done
+}
+
 # Install new kernel
 function install(){
     sudo make modules_install
     if [[ -n ${HAVE_DKMS} ]]; then
-        sudo dkms autoinstall -k "${KVER}"
+        rebuild_dkms
     fi
     sudo cp arch/x86_64/boot/bzImage /boot/vmlinuz-linux-${LOCALVERSION}
     sudo cp System.map /boot/System.map
