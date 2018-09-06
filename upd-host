@@ -11,6 +11,21 @@
 source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/common"
 trap 'echo; die "Manually aborted!"' SIGINT SIGTERM
 
+# Gather parameters on extension
+while [[ ${#} -ge 1 ]]; do
+    case ${1} in
+        # Extension
+        "-e"|"--extension")
+            shift && enforce_value "${@}"
+
+            EX=$(sed 's/,/ /g' <<< "${1}") ;;
+    esac
+    shift
+done
+
+# Default parameters if no extension
+[[ -z ${EX} ]] && EX="fakenews gambling"
+
 # Existence sanity checks
 cd "${HOME}/github/hosts" || die "Hosts folder doesn't exist, please clone!"
 
@@ -27,4 +42,4 @@ header "Copy Additional host, blacklist, and whitelist if exist"
 
 # Updating Host
 header "Updating Host File"
-python updateHostsFile.py --auto --replace --extensions fakenews gambling --flush-dns-cache
+python updateHostsFile.py --auto --replace --extensions "${EX}" --flush-dns-cache
