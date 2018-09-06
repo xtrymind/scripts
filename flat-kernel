@@ -15,8 +15,6 @@
 
 # Gather parameters
 function parse_parameters() {
-    # Unset the universal OS variable for this script only
-    PARAMS="${*}"
     while [[ ${#} -ge 1 ]]; do
         case ${1} in
             # AnyKernel folder
@@ -120,6 +118,7 @@ function device_flags() {
             # variable
             #KERNEL_BRANCH=flat
 
+            # shellcheck disable=SC2153
             [[ -z ${GCC_FOLDER} ]] && GCC_FOLDER=${TC_FOLDER}/aarch64-linux-gnu_8.x
             [[ -z ${GCC_32_BIT_FOLDER} ]] && GCC_32_BIT_FOLDER=${TC_FOLDER}/arm-linux-gnueabi_8.x
             [[ -z ${CLANG_FOLDER} ]]&& CLANG_FOLDER=${TC_FOLDER}/android-clang-8.x/
@@ -373,42 +372,13 @@ function generate_version() {
     SIGNED_ZIP=${KERNEL_NAME}.zip
 }
 
-# Generate changelog
-function generate_changelog() {
-    echo "  - Generating changelog"
-
-    GITHUB="http://github.com/xtrymind"
-    CHANGELOG=${HOME}/flat${VERSION_TEXT}-changelog.txt
-
-    # Kernel source first
-    cd "${SOURCE_FOLDER}" || die "Kernel source is missing!"
-
-    # We need to mark the previous tag for changelog
-    PREV_TAG_NAME=$(git tag --sort=-taggerdate | head -n 1)
-    [[ -z ${PREV_TAG_NAME} ]] && return
-    RANGE=${PREV_TAG_NAME}..HEAD
-
-    # Show where commits are located
-    {
-        echo "${GITHUB}/${DEVICE_NAME_GITHUB}/commits/${KERNEL_BRANCH}\n"
-
-        # Use shortlog for pretty output
-        git log "${RANGE}" | git shortlog
-
-        # Generate a diff as well
-        git diff --find-renames --stat --summary "${RANGE}"
-    } > "${CHANGELOG}"
-
-    # Copy short changelog for FKU
-    #[[ ${STABLE} ]] && cp "${SHORT_CHANGELOG}" "${FILE_MOVE}/.changelog"
-}
-
 ################
 #              #
 # SCRIPT START #
 #              #
 ################
 
+# shellcheck disable=SC1090
 source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/common"
 
 # Start tracking time
