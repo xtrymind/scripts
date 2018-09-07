@@ -48,6 +48,11 @@ if [ -d "$HOME/bin" ] ; then
     PATH="$HOME/bin:$PATH"
 fi
 
+# Add path for comvert
+if [ -d "${HOME}/repo/comvert" ] ; then
+    PATH="${HOME}/repo/comvert:$PATH"
+fi
+
 # Use ccache
 export USE_CCACHE=1;
 if [[ -z "${CCACHE_DIR}" ]]; then
