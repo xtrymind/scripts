@@ -21,23 +21,24 @@ while [[ ${#} -ge 1 ]]; do
         "-v"|"--version")
             shift && enforce_value "${@}"
 
-            # zipVersionCode,apkVersion,apkVersionCode
+            # versionCode,zipVersionCode,apkVersion,apkVersionCode
+            # example build-magisk -v 17.2,17101,5.9.2,140
             IFS=',' read -r -a VERSION_VALUES <<< "${1}"
-            [[ ${#VERSION_VALUES[@]} -lt 3 ]] && die "Please specify the correct version format!"
+            [[ ${#VERSION_VALUES[@]} -lt 4 ]] && die "Please specify the correct version format!"
 
-            VERSION_CODE=${VERSION_VALUES[0]}
-            VERSION=${VERSION_CODE:0:2}.${VERSION_CODE:2:1}
-            VERSION_SUFFIX=${VERSION_CODE:5}
+            VERSION=${VERSION_VALUES[0]}
+            VERSION_CODE=${VERSION_VALUES[1]}
+            VERSION_SUFFIX=${VERSION_CODE:3}
 
-            APK_VERSION=${VERSION_VALUES[1]}
-            APK_VERSION_CODE=${VERSION_VALUES[2]}${VERSION_SUFFIX} ;;
+            APK_VERSION=${VERSION_VALUES[2]}
+            APK_VERSION_CODE=${VERSION_VALUES[3]}${VERSION_SUFFIX} ;;
     esac
     shift
 done
 
 # Parameter sanity check
-[[ -z ${VERSION} || -z ${VERSION_CODE} ]] && die "Version or version code is not set!"`
-[[ -z ${APK_VERSION} || -z ${APK_VERSION_CODE} ]] && die "APK version or version code is not set!"`
+[[ -z ${VERSION} || -z ${VERSION_CODE} ]] && die "Version or version code is not set!"
+[[ -z ${APK_VERSION} || -z ${APK_VERSION_CODE} ]] && die "APK version or version code is not set!"
 [[ -z ${HASH} ]] && HASH=origin/master
 
 # Existence sanity checks
@@ -57,10 +58,13 @@ git submodule update --init --recursive
 header "Cleaning up"
 ANDROID_NDK_HOME=${TC_FOLDER}/FrankeNDK ./build.py clean
 
+# Get commit id
+SHA="-g$(git rev-parse --verify --short=8 ${HASH})"
+
 # Patch config with proper versions
-sed -e "/^version=/s/=.*/=${VERSION}/" \
+sed -e "/^version=/s/=.*/=${VERSION}${SHA}/" \
     -e "/^versionCode=/s/=.*/=${VERSION_CODE}/" \
-    -e "/^appVersion=/s/=.*/=${APK_VERSION}/" \
+    -e "/^appVersion=/s/=.*/=${APK_VERSION}${SHA}/" \
     -e "/^appVersionCode=/s/=.*/=${APK_VERSION_CODE}/" \
     -i config.prop
 
@@ -74,7 +78,6 @@ ANDROID_NDK_HOME=${TC_FOLDER}/FrankeNDK ./build.py -r all
 # Only move files if the build actually succeeded
 if [[ -f out/magisk-release.zip && -z ${BUILD_ONLY} ]]; then
     FOLDER=${HOME}/repo/magisk-files
-    SHA="-g$(git rev-parse --verify --short=12 ${HASH})"
     APK="MagiskManager-v${APK_VERSION}(${APK_VERSION_CODE})${SHA}.apk"
     ZIP="Magisk-v${VERSION}(${VERSION_CODE})${SHA}.zip"
     UNINSTALLER="Magisk-uninstaller${SHA}.zip"
@@ -92,13 +95,13 @@ if [[ -f out/magisk-release.zip && -z ${BUILD_ONLY} ]]; then
     {
         echo "{"
         echo "  \"app\": {"
-        echo "    \"version\": \"${APK_VERSION}\","
+        echo "    \"version\": \"${APK_VERSION}${SHA}\","
         echo "    \"versionCode\": \"${APK_VERSION_CODE}\","
         echo "    \"link\": \"$(web_link_gitlab "${FOLDER}/${APK}")\","
         echo "    \"note\": \"https://gitlab.com/xtrymind/magisk-files/raw/master/README.md\""
         echo "  },"
         echo "  \"magisk\": {"
-        echo "    \"version\": \"${VERSION}\","
+        echo "    \"version\": \"${VERSION}${SHA}\","
         echo "    \"versionCode\": \"${VERSION_CODE}\","
         echo "    \"link\": \"$(web_link_gitlab "${FOLDER}/${ZIP}")\","
         echo "    \"note\": \"https://gitlab.com/xtrymind/magisk-files/raw/master/README.md\","
