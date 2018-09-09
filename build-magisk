@@ -117,11 +117,12 @@ if [[ -f out/magisk-release.zip && -z ${BUILD_ONLY} ]]; then
         echo "}"
     } > "${FOLDER}/updater.json"
 
+    SHA=$(sed 's/-g//g' <<< "${SHA}")
     cd "${FOLDER}" || die "Can't move into ${FOLDER}"
     git add -f .
     echo
     #gpg_available
-    git ac -m "magisk-files: ${VERSION_CODE}"
+    git ac -m "magisk-files: update to ${SHA}"
     git push
     echo
 fi
