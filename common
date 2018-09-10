@@ -69,9 +69,8 @@ function sjack() {
     . prebuilts/sdk/tools/jack-admin stop-server
 }
 
-# Build rom
-function rom(){
-    export ANDROID_JACK_VM_ARGS="-Dfile.encoding=UTF-8 -XX:+TieredCompilation -Xmx4G"
+# Set up android build environment
+function envrom(){
     export PATH="/opt/python2:$PATH"
     export LC_ALL=C
 }
