@@ -5,6 +5,11 @@
 # Copyright (C) 2018 Dede Dindin Qudsy
 #
 # Update host from steven black repo https://github.com/StevenBlack/hosts
+#
+# dependencies
+# sudo pacman -S python-lxml python-beautifulsoup4 python-mock
+# or
+# pip3 install --user -r requirements.txt
 
 # Source common functions
 # shellcheck disable=SC1090
