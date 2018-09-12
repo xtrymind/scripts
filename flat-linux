@@ -59,7 +59,7 @@ function compile(){
 # Remove old kernel & modules
 function remove_old_kernel() {
     sudo rm -f /boot/vmlinuz-linux-${LOCALVERSION}
-    sudo rm -rf /lib/modules/*${LOCALVERSION}*
+    sudo rm -rf /lib/modules/${IKVER}
 }
 
 ## Rebuild dkms module
