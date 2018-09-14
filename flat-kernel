@@ -346,8 +346,8 @@ function generate_version() {
         VERSION_TEXT="-r${RV}"
     fi
 
-    # Add hash information to the file for debugging with 12 hash length
-    NUM=12
+    # Add hash information to the file for debugging with 8 hash length
+    NUM=8
     SHA="-g$(git rev-parse --verify --short=${NUM} HEAD)"
     LOCALVERSION="${LOCALVERSION}${SHA}"
 
