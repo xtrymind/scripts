@@ -180,3 +180,5 @@ function clang_version() {
 
     "${1}" --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//' || display_error "Something went wrong!"
 }
+
+source common-file
