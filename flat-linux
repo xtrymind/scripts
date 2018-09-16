@@ -59,7 +59,7 @@ function compile(){
 # Remove old kernel & modules
 function remove_old_kernel() {
     sudo rm -f /boot/vmlinuz-linux-${LOCALVERSION}
-    sudo rm -rf /lib/modules/${IKVER}
+    sudo rm -rf /lib/modules/"${IKVER}"
 }
 
 ## Rebuild dkms module
@@ -76,7 +76,9 @@ function install_kernel(){
     if [[ -n ${HAVE_DKMS} ]]; then
         rebuild_dkms
     fi
-    remove_old_kernel
+    if [[ ${IKVER} != "${KERVER}" ]]; then
+        remove_old_kernel
+    fi
     sudo cp arch/x86_64/boot/bzImage /boot/vmlinuz-linux-${LOCALVERSION}
     sudo cp System.map /boot/System.map
     sudo mkinitcpio -k "${KERVER}" -g /boot/initramfs-linux-${LOCALVERSION}.img
