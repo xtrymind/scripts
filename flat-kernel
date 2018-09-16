@@ -106,7 +106,7 @@ function mv() {
 function device_flags() {
     case ${DEVICE} in
         "mido")
-            [[ -z ${COMPILER} ]] && COMPILER=clang
+            [[ -z ${COMPILER} ]] && COMPILER=gcc
 
             [[ -z ${DEFCONFIG} ]] && DEFCONFIG="flat_defconfig"
 
