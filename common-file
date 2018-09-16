@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+#
+# Copyright (C) 2018 Dede Dindin Qudsy
+#
+# Common function for file management
+
+# make cbz file from all folder in current dirrectory
+function mkacbz() {
+    for dir in */; do base=$(basename "$dir"); zip -r9 "${base}.cbz" "$dir"; done
+}
+
+# convert zip file to cbz in current dirrectory
+function cvcbz() {
+    for file in *.zip; do mv "$file" "${file%.zip}.cbz"; done
+}
+
+# remove colon(":") from file name
+function rmcolon() {
+    for file in *.cbz; do mv "$file" "$(echo "$file" | sed 's/[^a-zA-Z0-9.[:space:]]//g')"; done
+}
