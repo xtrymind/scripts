@@ -12,6 +12,23 @@
 #             #
 ###############
 
+# Gather parameters
+function parse_parameters() {
+    while [[ ${#} -ge 1 ]]; do
+        case ${1} in
+            # build without cleaning
+            "-nc"|"--noclean")
+                NOCLEAN=true ;;
+
+            *)
+                die "Invalid parameter" ;;
+        esac
+
+        shift
+    done
+
+}
+
 # Set variables
 function generate_variables() {
     # Source folders
@@ -44,7 +61,9 @@ function generate_variables() {
 function clean_up() {
     # Only cd if kernel source exist
     cd "${SOURCE_FOLDER}" || die "Kernel source is missing!"
-    make clean && make mrproper
+    if [[ -z ${NOCLEAN} ]]; then
+        make clean && make mrproper
+    fi
 }
 
 # Compile kernel
@@ -97,6 +116,7 @@ source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/c
 # Start tracking time
 START=$(date +"%s")
 
+parse_parameters "${@}"
 generate_variables
 clean_up
 compile
