@@ -122,7 +122,7 @@ if [[ -f out/magisk-release.zip && -z ${BUILD_ONLY} ]]; then
     git add -f .
     echo
     #gpg_available
-    git ac -m "magisk-files: update to ${SHA}"
+    git ac -m "magisk-files: upstream to ${SHA}"
     git push
     echo
 fi
