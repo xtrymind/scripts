@@ -20,6 +20,16 @@ function parse_parameters() {
             "-nc"|"--noclean")
                 NOCLEAN=true ;;
 
+            # How much script output to show
+            "-V"|"--verbosity-level")
+                shift && enforce_value "${@}"
+                VERBOSITY_LEVEL=${1}
+                case ${VERBOSITY_LEVEL} in
+                    "0") RG_LINES=0; HIDDEN_COMMANDS=true ;;
+                    "1") SHOW_OUTPUT=true; HIDDEN_COMMANDS=true ;;
+                    "2") SHOW_OUTPUT=true; VERBOSE_COMMANDS=true ;;
+                esac ;;
+
             *)
                 die "Invalid parameter" ;;
         esac
@@ -27,6 +37,23 @@ function parse_parameters() {
         shift
     done
 
+    [[ -z ${VERBOSITY_LEVEL} ]] && HIDDEN_COMMANDS=true
+
+}
+
+# 'cp -v' alias
+function cp() {
+    command cp ${VERBOSE_COMMANDS:+ "-v"} "${@}"
+}
+
+# 'mv -v' alias
+function mv() {
+    command mv ${VERBOSE_COMMANDS:+ "-v"} "${@}"
+}
+
+# 'rm -v' alias
+function rm() {
+    command rm ${VERBOSE_COMMANDS:+ "-v"} "${@}"
 }
 
 # Set variables
@@ -69,8 +96,11 @@ function clean_up() {
 # Compile kernel
 function compile(){
     make ${DEFCONFIG} prepare
-    make "${JOBS_FLAG}"
-
+    if [[ -n ${SHOW_OUTPUT} ]]; then
+        make "${JOBS_FLAG}"
+    else
+        make "${JOBS_FLAG}" |& rg --color=never --after-context=${RG_LINES:-10} "error:|warning:" && echo
+    fi
     # Export kernel version
     KERVER=$(cat include/config/kernel.release)
 }
