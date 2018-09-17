@@ -58,7 +58,7 @@ function parse_parameters() {
                 REVISION=${1} ;;
 
             # Time to show in kernel version
-            "-ut"|"--utime")
+            "-ut"|"--utctime")
                 UTCTIME=TRUE ;;
 
             # Version number
