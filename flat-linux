@@ -16,6 +16,10 @@
 function parse_parameters() {
     while [[ ${#} -ge 1 ]]; do
         case ${1} in
+            # build only
+            "-b"|"--buildonly")
+                BUILDONLY=true ;;
+
             # build without cleaning
             "-nc"|"--noclean")
                 NOCLEAN=true ;;
@@ -150,5 +154,7 @@ parse_parameters "${@}"
 generate_variables
 clean_up
 compile
-install_kernel
+if [[ -z ${BUILDONLY} ]]; then
+    install_kernel
+fi
 ending_info
