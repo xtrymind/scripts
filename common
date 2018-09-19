@@ -42,13 +42,8 @@ if [[ -z "${CCACHE_DIR}" ]]; then
 fi
 
 # Sync repo
-function syncc() {
+function rps {
     repo sync -j4 --force-sync -c --no-clone-bundle --no-tags --optimized-fetch --prune
-}
-
-# Kill jack after build rom
-function sjack() {
-    . prebuilts/sdk/tools/jack-admin stop-server
 }
 
 # Set up android build environment
@@ -162,5 +157,3 @@ function clang_version() {
 
     "${1}" --version | head -n 1 | cut -d \( -f 1 | sed 's/[[:space:]]*$//' || display_error "Something went wrong!"
 }
-
-source common-file
