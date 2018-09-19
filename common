@@ -1,32 +1,14 @@
 #!/usr/bin/env bash
 
-# check if bash or zsh
-if [[ ${0} = bash ]]; then
-    source ${HOME}/.git-prompt.sh
-    export GIT_PS1_SHOWDIRTYSTATE=1
-    export GIT_PS1_SHOWUPSTREAM=auto
-    export PROMPT_COMMAND='__git_ps1_custom "\[\033[01;34m\]\u@\h \[\033[01;32m\]\w\[\033[01;31m\]" " \[\033[39m\]\$\[\033[0m\] "'
-fi
-
 # Location of "scripts" folder
 SCRIPTS_FOLDER="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/scripts"
 
 # Directory
-LOS=${HOME}/android/lineage
+LOS=${HOME}/local/android/lineage
 TC_FOLDER=${HOME}/toolchains
 FOLDER_MAGISK=${HOME}/repo/magisk-files
 KERNEL_FOLDER=${HOME}/local/kernel
 BIN_FOLDER=${HOME}/bin
-
-# alias
-alias inst="sudo pacman -S --noconfirm "
-alias rem="sudo pacman -Rns "
-alias upd="sudo pacman -Syu --noconfirm "
-alias ref="sudo reflector --latest 200 --protocol http --protocol https --sort rate --save /etc/pacman.d/mirrorlist"
-alias cu="checkupdates"
-alias hos="python updateHostsFile.py --auto --replace --extensions fakenews gambling --flush-dns-cache"
-alias p1="patch -p1"
-alias mzip='for dir in */; do base=$(basename "$dir"); zip -r9 "${base}.cbz" "$dir"; done'
 
 # Colors
 BLINK_RED="\033[05;31m"
