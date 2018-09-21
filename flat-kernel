@@ -371,6 +371,8 @@ function generate_version() {
         [[ ${REVISION} -ge 1 ]] && KBUILD_BUILD_VERSION=${REVISION}
     fi
 
+    DATE="-$(date +%Y%m%d-%H%M)"
+
     # Export KERNEL_NAME based on the above information
     KERNEL_NAME="${CONFIG_KERNELNAMEZIP}${LOCALVERSION_ZIP}${VERSION_TEXT}${REVISION_FOR_FILE}${DATE}"
 
