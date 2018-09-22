@@ -55,9 +55,9 @@ function parse_parameters() {
             "-I"|"--install-only")
                 INSTALL_ONLY=true ;;
 
-            "-i"|"--install-folder")
+            "-i"|"--install-root")
                 shift && enforce_value "${@}"
-                INSTALL_FOLDER=${1} ;;
+                INSTALL_ROOT=${1} ;;
 
             "-l"|"--local-changes")
                 LOCAL_CHANGES=true ;;
@@ -104,7 +104,8 @@ function parse_parameters() {
     [[ -z ${VERSION} ]] && VERSION=${MASTER_VERSION}
 
     # Folder that will hold the final compiled toolchain
-    [[ -z ${INSTALL_FOLDER} ]] && INSTALL_FOLDER=${TC_FOLDER}/${VENDOR:+"${VENDOR,,}-"}clang-${VERSION}.x${TEST:+"-test"}
+    [[ -z ${INSTALL_ROOT} ]] && INSTALL_ROOT=${TC_FOLDER}
+    INSTALL_FOLDER=${INSTALL_ROOT}/${VENDOR:+"${VENDOR,,}-"}clang-${VERSION}.x${TEST:+"-test"}
 
     # Set compiler
     CC=$(command -v clang || command -v gcc)
