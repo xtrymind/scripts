@@ -398,12 +398,14 @@ function ending_info() {
     DURATION=$(format_time "${START}" "${END}")
 
     if [[ "${*}" =~ "-s" ]]; then
-        FILE_LOCATION=${HOME}/flatKernel/${SIGNED_ZIP}
-        SIZE=$(du -h "${FILE_LOCATION}" | awk '{print $1}')
-        EXIT_CODE=0
+        if [[ -z ${IMAGE_ONLY} ]]; then
+            FILE_LOCATION=${HOME}/flatKernel/${SIGNED_ZIP}
+            SIZE=$(du -h "${FILE_LOCATION}" | awk '{print $1}')
 
-        echo "FILE LOCATION: ${FILE_LOCATION}"
-        echo "SIZE: ${SIZE}"
+            echo "FILE LOCATION: ${FILE_LOCATION}"
+            echo "SIZE: ${SIZE}"
+        fi
+        EXIT_CODE=0
     else
         echo "Build failed"
         EXIT_CODE=1
