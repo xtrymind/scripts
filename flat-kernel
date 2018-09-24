@@ -402,8 +402,8 @@ function ending_info() {
         SIZE=$(du -h "${FILE_LOCATION}" | awk '{print $1}')
         EXIT_CODE=0
 
-        echo "${GRN}FILE LOCATION: ${FILE_LOCATION}"
-        echo "SIZE: ${SIZE}${RST}"
+        echo "FILE LOCATION: ${FILE_LOCATION}"
+        echo "SIZE: ${SIZE}"
     else
         echo "Build failed"
         EXIT_CODE=1
