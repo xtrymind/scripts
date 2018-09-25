@@ -327,7 +327,7 @@ function kmake() {
 }
 
 function inc_version(){
-    cp -f "${OUT_FOLDER}"/.version /tmp/version_"${DEVICE}"
+    [[ -f "${OUT_FOLDER}"/.version ]] && cp -f "${OUT_FOLDER}"/.version /tmp/version_"${DEVICE}"
     git clean -dfx ${HIDDEN_COMMANDS:+ "-q"}
     [[ -z ${LEGACY_DEVICE} ]] && mkdir "${OUT_FOLDER}"
     cp /tmp/version_"${DEVICE}" "${OUT_FOLDER}"/.version
