@@ -197,6 +197,47 @@ function generate_variables() {
     fi
 }
 
+# Setup compilation
+function generate_version() {
+    # This is set in the defconfig
+    CONFIG_KERNELNAMEZIP="fk"
+    LOCALVERSION_ZIP="-${DEVICE_NAME_FILE}"
+
+    # Add version if present
+    if [[ -n ${VERSION} ]]; then
+        VERSION_TEXT="-v${VERSION}"
+    else
+        RV=$(($(cat "${OUT_FOLDER}"/.version)+1))
+        VERSION_TEXT="-r${RV}"
+    fi
+
+    # Add hash information to the file for debugging with 8 hash length
+    SHA="-g$(git rev-parse --verify --short=8 HEAD)"
+    LOCALVERSION="${LOCALVERSION}${SHA}"
+
+    # If there are uncommitted changes, mark as dirty
+    if [[ $( git diff-index --name-only HEAD ) ]]; then
+        DIRTY="-dirty"
+        LOCALVERSION="${LOCALVERSION}${DIRTY}"
+    fi
+
+    # If REVISION exists, use it for the file
+    if [[ -n ${REVISION} ]]; then
+        REVISION_FOR_FILE=".${REVISION}"
+
+        # If REVISION is greater than or equal to 1, pass it to the build system
+        [[ ${REVISION} -ge 1 ]] && KBUILD_BUILD_VERSION=${REVISION}
+    fi
+
+    DATE="-$(date +%Y%m%d-%H%M)"
+
+    # Export KERNEL_NAME based on the above information
+    KERNEL_NAME="${CONFIG_KERNELNAMEZIP}${LOCALVERSION_ZIP}${VERSION_TEXT}${REVISION_FOR_FILE}${DATE}"
+
+    UNSIGNED_ZIP=${KERNEL_NAME}-unsigned.zip
+    SIGNED_ZIP=${KERNEL_NAME}.zip
+}
+
 # Make wrapper for make function for GCC
 function make_wrapper_gcc() {
     make "${JOBS_FLAG}" \
@@ -276,6 +317,34 @@ function build_kernel() {
     fi
 }
 
+# Clean up
+function clean_up() {
+    # Clean AnyKernel2 folder if building a zip
+    if [[ -z ${IMAGE_ONLY} ]]; then
+        cd "${ANYKERNEL2_FOLDER}" || die "AnyKernel2 source is missing!"
+        git clean -xfd ${HIDDEN_COMMANDS:+ "-q"}
+    fi
+
+    # enter kernel directory
+    cd "${SOURCE_FOLDER}" || die "Kernel source is missing!"
+    if [[ -n ${KERNEL_BRANCH} ]]; then
+        if [[ -z $(git status | ag "bisec|rebas") ]]; then
+            git checkout ${HIDDEN_COMMANDS:+ "-q"} "${KERNEL_BRANCH}" || die "${KERNEL_BRANCH} doesn't exist!"
+        fi
+    fi
+}
+
+# Print variables
+function print_variables() {
+    echo "${BOLD}Device:${RST}     ${DEVICE}\n"
+
+    echo "${BOLD}Branch:${RST}     $(git describe --exact-match 2>/dev/null || git cb) @ $(git kf)\n"
+
+    [[ ${COMPILER} = "clang" ]] && echo "${BOLD}Clang:${RST}      ${CLANG}\n"
+
+    echo "${BOLD}GCC:${RST}        ${GCC}\n"
+}
+
 # Move kernel files after compilation
 function move_kernel_files() {
     if [[ -z ${IMAGE_ONLY} ]]; then
@@ -286,6 +355,7 @@ function move_kernel_files() {
         echo "Revision: $(cat "${OUT_FOLDER}/.version")" >> "${ANYKERNEL2_FOLDER}/version"
     fi
 }
+
 
 # After build tasks
 function after_build_tasks() {
@@ -319,75 +389,6 @@ function package_zip() {
         rm "${UNSIGNED_ZIP}"
         mv "${SIGNED_ZIP}" "${HOME}/flatKernel"
     fi
-}
-
-# Clean up
-function clean_up() {
-    # Clean AnyKernel2 folder if building a zip
-    if [[ -z ${IMAGE_ONLY} ]]; then
-        cd "${ANYKERNEL2_FOLDER}" || die "AnyKernel2 source is missing!"
-        git clean -xfd ${HIDDEN_COMMANDS:+ "-q"}
-    fi
-
-    # enter kernel directory
-    cd "${SOURCE_FOLDER}" || die "Kernel source is missing!"
-    if [[ -n ${KERNEL_BRANCH} ]]; then
-        if [[ -z $(git status | ag "bisec|rebas") ]]; then
-            git checkout ${HIDDEN_COMMANDS:+ "-q"} "${KERNEL_BRANCH}" || die "${KERNEL_BRANCH} doesn't exist!"
-        fi
-    fi
-}
-
-# Setup compilation
-function generate_version() {
-    # This is set in the defconfig
-    CONFIG_KERNELNAMEZIP="fk"
-    LOCALVERSION_ZIP="-${DEVICE_NAME_FILE}"
-
-    # Add version if present
-    if [[ -n ${VERSION} ]]; then
-        VERSION_TEXT="-v${VERSION}"
-    else
-        RV=$(($(cat "${OUT_FOLDER}"/.version)+1))
-        VERSION_TEXT="-r${RV}"
-    fi
-
-    # Add hash information to the file for debugging with 8 hash length
-    SHA="-g$(git rev-parse --verify --short=8 HEAD)"
-    LOCALVERSION="${LOCALVERSION}${SHA}"
-
-    # If there are uncommitted changes, mark as dirty
-    if [[ $( git diff-index --name-only HEAD ) ]]; then
-        DIRTY="-dirty"
-        LOCALVERSION="${LOCALVERSION}${DIRTY}"
-    fi
-
-    # If REVISION exists, use it for the file
-    if [[ -n ${REVISION} ]]; then
-        REVISION_FOR_FILE=".${REVISION}"
-
-        # If REVISION is greater than or equal to 1, pass it to the build system
-        [[ ${REVISION} -ge 1 ]] && KBUILD_BUILD_VERSION=${REVISION}
-    fi
-
-    DATE="-$(date +%Y%m%d-%H%M)"
-
-    # Export KERNEL_NAME based on the above information
-    KERNEL_NAME="${CONFIG_KERNELNAMEZIP}${LOCALVERSION_ZIP}${VERSION_TEXT}${REVISION_FOR_FILE}${DATE}"
-
-    UNSIGNED_ZIP=${KERNEL_NAME}-unsigned.zip
-    SIGNED_ZIP=${KERNEL_NAME}.zip
-}
-
-# Print variables
-function print_variables() {
-    echo "${BOLD}Device:${RST}     ${DEVICE}\n"
-
-    echo "${BOLD}Branch:${RST}     $(git describe --exact-match 2>/dev/null || git cb) @ $(git kf)\n"
-
-    [[ ${COMPILER} = "clang" ]] && echo "${BOLD}Clang:${RST}      ${CLANG}\n"
-
-    echo "${BOLD}GCC:${RST}        ${GCC}\n"
 }
 
 # Print file info
