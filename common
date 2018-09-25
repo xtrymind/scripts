@@ -43,7 +43,7 @@ fi
 
 # Sync repo
 function rps {
-    repo sync -j4 --force-sync -c --no-clone-bundle --no-tags --optimized-fetch --prune
+    repo sync -j4 --force-sync -c --no-clone-bundle --no-tags --optimized-fetch --prune "${@}" |& rg --color=never --after-context=3 "git:" && echo
 }
 
 # Set up android build environment
