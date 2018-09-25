@@ -328,7 +328,11 @@ function kmake() {
 
 function inc_version(){
     [[ -f "${OUT_FOLDER}"/.version ]] && cp -f "${OUT_FOLDER}"/.version /tmp/version_"${DEVICE}"
-    git clean -dfx ${HIDDEN_COMMANDS:+ "-q"}
+    if [[ -z ${LEGACY_DEVICE} ]]; then
+        git clean -dfx ${HIDDEN_COMMANDS:+ "-q"}
+    else
+        kmake clean && kmake mrproper
+    fi
     [[ -z ${LEGACY_DEVICE} ]] && mkdir "${OUT_FOLDER}"
     cp /tmp/version_"${DEVICE}" "${OUT_FOLDER}"/.version
 }
@@ -337,9 +341,6 @@ function inc_version(){
 function build_kernel() {
     inc_version
 
-    if [[ -z ${LEGACY_DEVICE} ]]; then
-        kmake clean && kmake mrproper
-    fi
     # Point to proper defconfig and generate version files
     kmake ${DEFCONFIG} prepare
 
