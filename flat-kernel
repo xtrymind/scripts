@@ -360,6 +360,8 @@ function build_kernel() {
             ;;
         "tulip")
             OUT_KERNEL_IMAGE=${OUT_FOLDER}/arch/${ARCHITECTURE}/boot/Image
+            ${HOME}/local/kernel/tulip_build_tools/dtbToolCM -2 -o dt.img -s 2048 -p scripts/dtc/ arch/arm/boot/dts/
+            OUT_DTB_IMAGE=${OUT_FOLDER}/dt.img
             ;;
     esac
 
@@ -405,6 +407,7 @@ function print_variables() {
 function move_kernel_files() {
     # Move the kernel image
     cp "${OUT_KERNEL_IMAGE}" "${ANYKERNEL2_FOLDER}"
+    [[ -n ${OUT_DTB_IMAGE} ]] && cp "${OUT_DTB_IMAGE}" "${ANYKERNEL2_FOLDER}"
     echo "Kernel version: $(cat "${OUT_FOLDER}/include/config/kernel.release")" >> "${ANYKERNEL2_FOLDER}/version"
     echo "Revision: $(cat "${OUT_FOLDER}/.version")" >> "${ANYKERNEL2_FOLDER}/version"
 
