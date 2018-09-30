@@ -468,8 +468,8 @@ function ending_info() {
             FILE_LOCATION=${HOME}/flatKernel/${SIGNED_ZIP}
             SIZE=$(du -h "${FILE_LOCATION}" | awk '{print $1}')
 
-            echo "FILE LOCATION: ${FILE_LOCATION}"
-            echo "SIZE: ${SIZE}"
+            echo "${BOLD}FILE LOCATION: ${FILE_LOCATION}"
+            echo "SIZE: ${SIZE}${RST}"
         fi
         EXIT_CODE=0
     else
