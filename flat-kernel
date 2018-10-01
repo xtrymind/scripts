@@ -366,7 +366,7 @@ function build_kernel() {
     esac
 
     # Move them if they exist, error out if not
-    if [[ -n ${OUT_KERNEL_IMAGE} ]]; then
+    if [[ -f ${OUT_KERNEL_IMAGE} ]]; then
         echo "${GRN}${OS_STRING}$(basename "${OUT_KERNEL_IMAGE}") compiled successfully!${RST}\n"
         [[ -z ${IMAGE_ONLY} ]] && move_kernel_files
     else
