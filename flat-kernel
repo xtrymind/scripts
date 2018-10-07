@@ -136,7 +136,7 @@ function device_flags() {
             # shellcheck disable=SC2153
             [[ -z ${GCC_FOLDER} ]] && GCC_FOLDER=${TC_FOLDER}/aarch64-linux-gnu_8.x
             [[ -z ${GCC_32_BIT_FOLDER} ]] && GCC_32_BIT_FOLDER=${TC_FOLDER}/arm-linux-gnueabi_8.x
-            [[ -z ${CLANG_FOLDER} ]]&& CLANG_FOLDER=${TC_FOLDER}/android-clang-8.x/
+            [[ -z ${CLANG_FOLDER} ]]&& CLANG_FOLDER=${TC_FOLDER}/android-clang-8.x
             ;;
 
         "tulip")
