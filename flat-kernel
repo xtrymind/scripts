@@ -198,10 +198,7 @@ function generate_variables() {
     # Handle Clang
     if [[ ${COMPILER} = "clang" ]]; then
         CLANG=${CLANG_FOLDER}/bin/clang
-        CLANG_VERSION=$(${CLANG} --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
-
-        CLANG_LD_PATH=${CLANG_FOLDER}/lib
-        LLVM_DIS=${CLANG_FOLDER}/bin/llvm-dis
+        CLANG_VERSION=$(clang_version "${CLANG}")
 
         # Flags
         KCFLAGS="-mllvm -polly \
@@ -291,7 +288,6 @@ function make_wrapper_gcc_old() {
 
 # Make wrapper for make function for Clang
 function make_wrapper_clang() {
-    LD_LIBRARY_PATH="${CLANG_LD_PATH}:${LD_LIBARY_PATH}" \
     make "${JOBS_FLAG}" \
          ARCH=${ARCHITECTURE} \
          CC="${CCACHE} ${CLANG}" \
@@ -303,7 +299,6 @@ function make_wrapper_clang() {
          KBUILD_BUILD_VERSION="${KBUILD_BUILD_VERSION}" \
          KBUILD_BUILD_TIMESTAMP="${TIMESTAMP}" \
          KCFLAGS="${KCFLAGS}" \
-         LLVM_DIS="${LLVM_DIS}" \
          LOCALVERSION="${LOCALVERSION}" \
          O="${OUT_FOLDER}" \
          "$@"
