@@ -202,15 +202,15 @@ function generate_variables() {
 
         CLANG_LD_PATH=${CLANG_FOLDER}/lib
         LLVM_DIS=${CLANG_FOLDER}/bin/llvm-dis
-        if [[ -n ${PERSONAL} ]]; then
-            KCFLAGS="-mllvm -polly \
-                     -mllvm -polly-run-dce \
-                     -mllvm -polly-run-inliner \
-                     -mllvm -polly-opt-fusion=max \
-                     -mllvm -polly-ast-use-context \
-                     -mllvm -polly-vectorizer=stripmine \
-                     -mllvm -polly-detect-keep-going"
-        fi
+
+        # Flags
+        KCFLAGS="-mllvm -polly \
+                 -mllvm -polly-run-dce \
+                 -mllvm -polly-run-inliner \
+                 -mllvm -polly-opt-fusion=max \
+                 -mllvm -polly-ast-use-context \
+                 -mllvm -polly-vectorizer=stripmine \
+                 -mllvm -polly-detect-keep-going"
     fi
 
     # Handle AnyKernel2 Folder
