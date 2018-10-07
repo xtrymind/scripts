@@ -132,9 +132,17 @@ function install_kernel(){
     if [[ ${IKVER} != "${KERVER}" ]]; then
         remove_old_kernel
     fi
+    extramodule
     sudo cp arch/x86_64/boot/bzImage /boot/vmlinuz-linux-${LOCALVERSION}
     sudo cp System.map /boot/System.map
     sudo mkinitcpio -k "${KERVER}" -g /boot/initramfs-linux-${LOCALVERSION}.img
+}
+
+# Copy kernel version
+function extramodule(){
+    extradir="/usr/lib/modules/extramodules-${LOCALVERSION}"
+    [[ ! -d ${extradir} ]] && sudo mkdir ${extradir}
+    sudo cp -f include/config/kernel.release ${extradir}/version
 }
 
 # Print file info
