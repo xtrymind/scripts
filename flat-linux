@@ -118,8 +118,7 @@ function remove_old_kernel() {
 ## Rebuild dkms module
 # shellcheck disable=SC2086
 function rebuild_dkms() {
-    dkms status | sed 's/,//g;s/://g' | awk '{print "--force -m",$1,"-v",$2}' | while read -r line; do sudo dkms uninstall $line -k "${IKVER}"; done
-    dkms status | sed 's/,//g;s/://g' | awk '{print "--force -m",$1,"-v",$2}' | while read -r line; do sudo dkms build $line -k "${KERVER}"; done
+    dkms status | sed 's/,//g;s/://g' | awk '{print "--force -m",$1,"-v",$2}' | while read -r line; do sudo dkms remove $line -k "${IKVER}"; done
     dkms status | sed 's/,//g;s/://g' | awk '{print "--force -m",$1,"-v",$2}' | while read -r line; do sudo dkms install $line -k "${KERVER}"; done
 }
 
