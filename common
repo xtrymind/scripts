@@ -43,7 +43,7 @@ fi
 
 # Sync repo
 function rps {
-    repo sync -j4 --force-sync -c --no-clone-bundle --no-tags --optimized-fetch --prune "${@}" |& rg --color=never --after-context=3 "git:" && echo
+    repo sync -j4 --force-sync -c --no-clone-bundle --no-tags --optimized-fetch --prune "${@}" #|& rg --color=never --after-context=3 "git:" && echo
 }
 
 # Set up android build environment
@@ -172,4 +172,19 @@ function cvcbz() {
 # remove colon(":") from file name
 function rmcolon() {
     for file in *.cbz; do mv "$file" "$(echo "$file" | sed 's/[^a-zA-Z0-9.[:space:]]//g')"; done
+}
+
+# ripgrep wrapper
+function rg() {
+    # Bail out if rg is not installed
+    command -v rg &>/dev/null || { warn "ripgrep is not installed!"; return; }
+
+    # Colors match ag
+    command rg --colors "path:fg:green" \
+               --colors "path:style:bold" \
+               --colors "line:fg:yellow" \
+               --colors "line:style:bold" \
+               --colors "column:fg:yellow" \
+               --colors "column:style:bold" \
+               "${@}"
 }
