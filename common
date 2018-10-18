@@ -50,6 +50,7 @@ function rps {
 function envrom(){
     export PATH="/opt/python2:$PATH"
     export LC_ALL=C
+    export LINEAGE_VERSION_APPEND_TIME_OF_DAY=true
 }
 
 # Create config based on modprobed.db
