@@ -53,6 +53,12 @@ function parse_parameters() {
 
                 GCC_FOLDER=${1} ;;
 
+            # 32-bit GCC toolchain to use for compiling
+            "-gt-32"|"--gcc-32-bit-toolchain")
+                shift && enforce_value "${@}"
+
+                GCC_32_BIT_FOLDER=${1} ;;
+
             # Do not package kernel image
             "-io"|"--image-only")
                 IMAGE_ONLY=true ;;
@@ -183,15 +189,15 @@ function generate_variables() {
     GCC=${GCC_BIN%gcc}
 
     # 32-bit GCC toolchain if required
-    if [[ -n ${GCC_32_BIT} || -n ${GCC_32_BIT_FOLDER} ]]; then
+    if [[ -n ${GCC_32_BIT_FOLDER} ]]; then
         if [[ -z ${GCC_32_BIT} ]]; then
             if [[ ! -d ${GCC_32_BIT_FOLDER} ]]; then
                 GCC_32_BIT_FOLDER=${TC_FOLDER}/${GCC_32_BIT_FOLDER}
-                [[ ! -d ${GCC_32_BIT_FOLDER} ]] && die "Invalid GCC folder specified!"
+                [[ ! -d ${GCC_32_BIT_FOLDER} ]] && warn "Invalid GCC folder specified!"
             fi
             GCC_32_BIN=$(find "${GCC_32_BIT_FOLDER}/bin" \( -type f -o -type l \) -name '*-gcc' | head -n1)
         fi
-        [[ -z ${GCC_32_BIN} ]] && die "32-bit GCC toolchain could not be found!"
+        [[ -z ${GCC_32_BIN} ]] && warn "32-bit GCC toolchain could not be found!"
         GCC_32_BIT=${GCC_32_BIN%gcc}
     fi
 
