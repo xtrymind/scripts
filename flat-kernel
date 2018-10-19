@@ -69,6 +69,10 @@ function parse_parameters() {
 
                 REVISION=${1} ;;
 
+            # Save log
+            "-sl"|"--savelog")
+                SAVE_LOG=TRUE ;;
+
             # Time to show in kernel version
             "-ut"|"--utctime")
                 UTCTIME=TRUE ;;
@@ -352,7 +356,7 @@ function build_kernel() {
     fi
 
     # Make the kernel
-    kmake
+    [[ -z ${SAVE_LOG} ]] && kmake || kmake 2>&1 | tee ../kernel.log
 
     # Find the compiled files
     case ${DEVICE} in
