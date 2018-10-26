@@ -63,6 +63,10 @@ function parse_parameters() {
             "-io"|"--image-only")
                 IMAGE_ONLY=true ;;
 
+            # build without cleaning
+            "-nc"|"--noclean")
+                NOCLEAN=true ;;
+
             # Test versioning (# in kernel version)
             "-r"|"--revision")
                 shift && enforce_value "${@}"
@@ -333,12 +337,14 @@ function kmake() {
 
 function inc_version(){
     [[ -f "${OUT_FOLDER}"/.version ]] && cp -f "${OUT_FOLDER}"/.version /tmp/version_"${DEVICE}"
-    if [[ -z ${LEGACY_DEVICE} ]]; then
-        git clean -dfx ${HIDDEN_COMMANDS:+ "-q"}
-    else
-        kmake clean && kmake mrproper
+    if [[ -z ${NOCLEAN} ]]; then
+        if [[ -z ${LEGACY_DEVICE} ]]; then
+            git clean -dfx ${HIDDEN_COMMANDS:+ "-q"}
+        else
+           kmake clean && kmake mrproper
+        fi
     fi
-    [[ -z ${LEGACY_DEVICE} ]] && mkdir "${OUT_FOLDER}"
+    [[ -z ${LEGACY_DEVICE} && -z ${NOCLEAN} ]] && mkdir "${OUT_FOLDER}"
     cp /tmp/version_"${DEVICE}" "${OUT_FOLDER}"/.version
 }
 
