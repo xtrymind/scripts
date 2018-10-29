@@ -45,14 +45,6 @@ function parse_parameters() {
 
     while [[ ${#} -ge 1 ]]; do
         case ${1} in
-            "-B"|"--bootstrap")
-                if [[ -n ${ME} ]]; then
-                    for FLASH_VERSION in ${MASTER_VERSION} ${STABLE_VERSION}; do
-                        [[ -d ${TC_FOLDER}/flash-clang-${FLASH_VERSION}.x ]] && \
-                            export PATH="${TC_FOLDER}/flash-clang-${FLASH_VERSION}.x/bin:${PATH}"
-                    done
-                fi ;;
-
             "-b"|"--build-only")
                 BUILD_ONLY=true ;;
 
@@ -66,6 +58,9 @@ function parse_parameters() {
             "-i"|"--install-folder")
                 shift && enforce_value "${@}"
                 INSTALL_FOLDER=${1} ;;
+
+            "-l"|"--local-changes")
+                LOCAL_CHANGES=true ;;
 
             "-S"|"--stock")
                 STOCK=true ;;
@@ -108,14 +103,8 @@ function parse_parameters() {
     # The master branch is compiled by default
     [[ -z ${VERSION} ]] && VERSION=${MASTER_VERSION}
 
-    # Default parameters
-    [[ -z ${VENDOR} ]] && VENDOR="android"
-
     # Folder that will hold the final compiled toolchain
     [[ -z ${INSTALL_FOLDER} ]] && INSTALL_FOLDER=${TC_FOLDER}/${VENDOR:+"${VENDOR,,}-"}clang-${VERSION}.x${TEST:+"-test"}
-
-    # SVN copy of the LLVM folder for revisioning
-    SVN_FOLDER=${MAIN_FOLDER}/svn-${VERSION}.x
 
     # Set compiler
     CC=$(command -v clang || command -v gcc)
@@ -133,10 +122,12 @@ function rollback() {
                 git cherry-pick 24c9731717 || die "There was an error rolling back ${FOLDER}!"
                 git cherry-pick 513f3b3fb7 || die "There was an error rolling back ${FOLDER}!"
                 git cherry-pick eab6ce7dc6 || die "There was an error rolling back ${FOLDER}!"
+                git cherry-pick 69ad28caf8 || die "There was an error rolling back ${FOLDER}!"
             else
                 git cherry-pick 24c9731717 || die "There was an error rolling back ${FOLDER}!"
                 git cherry-pick 176213e989 || die "There was an error rolling back ${FOLDER}!"
                 git cherry-pick 382ac69d5e || die "There was an error rolling back ${FOLDER}!"
+                git cherry-pick f50a8a1cf3 || die "There was an error rolling back ${FOLDER}!"
             fi
         fi
     fi
@@ -149,7 +140,7 @@ function git_sync() {(
 
     # binutils uses another URL/branch scheme
     if [[ ${FOLDER} =~ "binutils" ]]; then
-        URL=https://sourceware.org/git/binutils-gdb.git
+        URL=git://sourceware.org/git/binutils-gdb.git
         # SC2030: Modification of BRANCH is local (to subshell caused by (..) group).
         # shellcheck disable=SC2030
         BRANCH=master
@@ -176,6 +167,7 @@ function git_sync() {(
     git clean -fxdq
 
     # If checking out a branch fails, it's because 'origin/<branch>' and 'upstream/<branch>' exist
+    git reset --hard
     git checkout ${BRANCH} || git checkout -b ${BRANCH} origin/${BRANCH}
 
     # For Clang, we need to add an upstream remote and rebase on it
@@ -185,12 +177,20 @@ function git_sync() {(
         if [[ -n ${STOCK} ]]; then
             git reset --hard upstream/"${BRANCH}"
         else
-            git reset --hard origin/"${BRANCH}"
+            [[ -z ${LOCAL_CHANGES} ]] && git reset --hard origin/"${BRANCH}"
             git rebase upstream/"${BRANCH}" || die "There was an error rebasing ${FOLDER}!"
+            [[ -z ${LOCAL_CHANGES} && -n ${ME} ]] && git push -f
         fi
+    elif [[ ${FOLDER} =~ "binutils" ]]; then
+        git fetch origin "${BRANCH}" || die "There was an error fetching updates for ${FOLDER}!"
+        git rebase origin/"${BRANCH}" || die "There was an error updating ${FOLDER}!"
     else
         git fetch origin || die "There was an error fetching updates for ${FOLDER}!"
-        git reset --hard origin/"${BRANCH}" || die "There was an error updating ${FOLDER}!"
+        if [[ -z ${LOCAL_CHANGES} ]]; then
+            git reset --hard origin/"${BRANCH}" || die "There was an error updating ${FOLDER}!"
+        else
+            git rebase origin/"${BRANCH}" || die "There was an error updating ${FOLDER}!"
+        fi
     fi
 
     # Roll back if necessary
@@ -198,9 +198,9 @@ function git_sync() {(
 ) || exit 1; }
 
 
-# Syncs a svn project
-function svn_sync() {
-    FOLDER=${1}
+# Gets the SVN revision of a particular project
+function svn_revision() {
+    PROJECT=${1}
 
     # SC2031: BRANCH was modified in a subshell. That change might be lost.
     # shellcheck disable=SC2031
@@ -209,14 +209,12 @@ function svn_sync() {
         *) URL_SUFFIX=branches/"${BRANCH}" ;;
     esac
 
-    if [[ ! -d ${FOLDER} ]]; then
-        svn co "https://llvm.org/svn/llvm-project/llvm/${URL_SUFFIX}" "${FOLDER}" || die "There was an error syncing ${FOLDER}!"
-    else
-        cd "${FOLDER}" || die "Error moving into ${FOLDER}"
-        svn update || die "There was an error updating ${FOLDER}!"
-    fi
+    case ${PROJECT} in
+        "clang") URL_SUFFIX=cfe/${URL_SUFFIX} ;;
+        "llvm") URL_SUFFIX=llvm/${URL_SUFFIX} ;;
+    esac
 
-    LLVM_VERSION_PATCH=$(svn info -r HEAD --show-item revision)
+    export "${PROJECT^^}"_SVN_REVISION="$(svn info "https://llvm.org/svn/llvm-project/${URL_SUFFIX}" --show-item revision)"
 }
 
 
@@ -237,13 +235,14 @@ function sync_all() {
     LLVM_ORG=https://git.llvm.org/git/
 
     git_sync llvm
-    svn_sync "$(basename "${SVN_FOLDER}")"
+    svn_revision llvm
 
     mkdir -p "${LLVM_FOLDER}/tools"
     cd "${LLVM_FOLDER}/tools" || die "Error creating tools folder!"
 
     git_sync binutils
     git_sync clang
+    svn_revision clang
     git_sync lld
     git_sync polly
 
@@ -302,13 +301,13 @@ function build() {
           -DLLVM_ENABLE_OCAMLDOC=OFF \
           -DLLVM_ENABLE_BINDINGS=OFF \
           -DLLVM_BINUTILS_INCDIR="${LLVM_FOLDER}/tools/binutils/include" \
-          -DLLVM_TARGETS_TO_BUILD="X86;ARM;AArch64" \
+          -DLLVM_TARGETS_TO_BUILD="ARM;AArch64;PowerPC;X86" \
           -DLLVM_OPTIMIZED_TABLEGEN=ON \
           -DLLVM_USE_LINKER=gold \
-          -DCLANG_VENDOR="${VENDOR:+"${VENDOR} "}" \
-          -DLLVM_VERSION_PATCH="${LLVM_VERSION_PATCH:?}" \
-          -DLLVM_VERSION_SUFFIX="" \
+          -DLLVM_VERSION_SUFFIX="-r${LLVM_SVN_REVISION:?}" \
           -DCLANG_REPOSITORY_STRING="${URL_PREFIX}clang" \
+          -DCLANG_VENDOR="${VENDOR:+"${VENDOR} "}" \
+          -DCLANG_VERSION_SUFFIX="-r${CLANG_SVN_REVISION:?}" \
           "${LLVM_FOLDER}" || die "There was an error running cmake!"
 
     time ninja && SUCCESS=true
@@ -356,7 +355,7 @@ function build() {
 function install() {
     if [[ -z ${TEST} ]]; then
         rm -rf "${INSTALL_FOLDER}-old"
-        cp -r "${INSTALL_FOLDER}" "${INSTALL_FOLDER}-old" 2>/dev/null
+        mv "${INSTALL_FOLDER}" "${INSTALL_FOLDER}-old" 2>/dev/null
     fi
 
     if ! ninja install &>/dev/null; then
