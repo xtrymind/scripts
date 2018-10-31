@@ -4,8 +4,8 @@
 SCRIPTS_FOLDER="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/scripts"
 
 # Directory
-LOS=${HOME}/local/android/lineage
-TC_FOLDER=${HOME}/toolchains
+LOS=${HOME}/local/lineage
+TC_FOLDER=${HOME}/local/toolchains
 FOLDER_MAGISK=${HOME}/repo/magisk-files
 KERNEL_FOLDER=${HOME}/local/kernel
 BIN_FOLDER=${HOME}/bin
@@ -50,7 +50,6 @@ function rps {
 function envrom(){
     export PATH="/opt/python2:$PATH"
     export LC_ALL=C
-    export LINEAGE_VERSION_APPEND_TIME_OF_DAY=true
 }
 
 # Create config based on modprobed.db
