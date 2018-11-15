@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Location of "scripts" folder
-SCRIPTS_FOLDER="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/scripts"
+SCRIPTS_FOLDER=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)
 
 # Directory
 LOS=${HOME}/local/lineage
@@ -50,6 +50,16 @@ function rps {
 function envrom(){
     export PATH="/opt/python2:$PATH"
     export LC_ALL=C
+}
+
+# Brunch with cmka for build lineage
+function bcmka(){
+	[[ ${#} -lt 1 ]] && { display_error "This function takes an argument!"; return; }
+
+	DEVICE=${1}
+
+	breakfast ${DEVICE}
+	cmka bacon
 }
 
 # Create config based on modprobed.db
@@ -152,10 +162,22 @@ function web_link_github() {
 
 # Remove URLs from Clang version
 function clang_version() {
-    [[ ${#} -lt 1 || ! ${1} =~ "clang" ]] && { display_error "You didn't supply a Clang binary!"; return; }
-    [[ ! -f ${1} ]] && { display_error "Clang binary supplied doesn't exist!"; return; }
+    [[ ${#} -lt 1 ]] && { display_error "This function takes an argument!"; return; }
 
-    "${1}" --version | head -n 1 | cut -d \( -f 1 | sed 's/[[:space:]]*$//' || display_error "Something went wrong!"
+    local CLANG POS
+    CLANG=${1}
+    if [[ $(basename "${CLANG}") != "clang" ]]; then
+        CLANG=$(find "${CLANG}" -name clang | head -n1)
+        [[ -z ${CLANG} ]] && { display_error "You didn't supply a Clang folder/binary!"; return; }
+    else
+        [[ ! -f ${CLANG} ]] && { display_error "Clang binary supplied doesn't exist!"; return; }
+    fi
+
+    case "${CLANG}" in
+        *aosp*) POS="1,2" ;;
+        *) POS="1" ;;
+    esac
+    "${CLANG}" --version | head -n 1 | cut -d \( -f "${POS}" | sed 's/[[:space:]]*$//' || display_error "Something went wrong!"
 }
 
 # Common function for file management
