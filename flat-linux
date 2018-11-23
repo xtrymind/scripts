@@ -68,18 +68,7 @@ function generate_variables() {
     # Kernel name
     LOCALVERSION="flat"
 
-    # Check on laptop or desktop
-    MODEL=$(lscpu | grep "Model name" | sed -r 's/Model name:\s{1,}(.*) CPU .*z\s*/\1/g' | cut -c19-)
-    case ${MODEL} in
-        i3-3217U)
-            DEFCONFIG="flat_laptop_defconfig" ;;
-
-        i5-2500)
-            DEFCONFIG="flat_desktop_defconfig" ;;
-
-        *)
-            die "Invalid devices" ;;
-    esac
+    DEFCONFIG="flat_defconfig"
 
     # Check if have dkms
     if command -v dkms > /dev/null 2>&1; then HAVE_DKMS=true; fi
@@ -99,11 +88,20 @@ function clean_up() {
 
 # Compile kernel
 function compile(){
+    KCFLAGS="-floop-nest-optimize \
+             -fgraphite-identity \
+             -ftree-loop-distribution \
+             -ffast-math \
+             -funsafe-math-optimizations \
+             -O3"
+
     make ${DEFCONFIG} prepare
     if [[ -n ${SHOW_OUTPUT} ]]; then
-        make "${JOBS_FLAG}"
+        make "${JOBS_FLAG}" \
+        KCFLAGS="${KCFLAGS}"
     else
-        make "${JOBS_FLAG}" |& rg --color=never --after-context=${RG_LINES:-10} "error:|warning:" && echo
+        make "${JOBS_FLAG}"  \
+        KCFLAGS="${KCFLAGS}" |& rg --color=never --after-context=${RG_LINES:-10} "error:|warning:" && echo
     fi
     # Export kernel version
     KERVER=$(cat include/config/kernel.release)
