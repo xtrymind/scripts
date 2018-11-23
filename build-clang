@@ -179,7 +179,6 @@ function git_sync() {(
         else
             [[ -z ${LOCAL_CHANGES} ]] && git reset --hard origin/"${BRANCH}"
             git rebase upstream/"${BRANCH}" || die "There was an error rebasing ${FOLDER}!"
-            [[ -z ${LOCAL_CHANGES} && -n ${ME} ]] && git push -f
         fi
     elif [[ ${FOLDER} =~ "binutils" ]]; then
         git fetch origin "${BRANCH}" || die "There was an error fetching updates for ${FOLDER}!"

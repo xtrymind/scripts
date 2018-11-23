@@ -210,3 +210,10 @@ function rg() {
                --colors "column:style:bold" \
                "${@}"
 }
+
+# Add a remote if it doesn't exist
+function add_remote() {
+    if ! git remote | grep -q -m 1 "${1}"; then
+        git remote add "${1}" "${2}"
+    fi
+}
