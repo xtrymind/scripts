@@ -179,9 +179,9 @@ function rm() {
 # Device "board" flags
 function device_flags() {
     case ${DEVICE} in
-        "mido")
+        "x00td")
             # Required flags
-            [[ -z ${ANDROID_VERSION} ]] && ANDROID_VERSION=9
+            [[ -z ${ANDROID_VERSION} ]] && ANDROID_VERSION=8.1.0
             AK2_SFX=${ANDROID_VERSION}
 
             BUILD_FUNCTION=build_kernel
@@ -191,7 +191,7 @@ function device_flags() {
             [[ -z ${DEFCONFIG} ]] && DEFCONFIG="flat_defconfig"
 
             DEVICE_NAME_FILE=${DEVICE^}
-            DEVICE_NAME_GITHUB=mido
+            DEVICE_NAME_GITHUB=x00td
             DEVICE_NAME_WEB=${DEVICE}
 
             if [[ -z ${CLANG_FOLDER} ]]; then
@@ -207,7 +207,7 @@ function device_flags() {
             [[ -z ${GCC_FOLDER} ]] && GCC_FOLDER=${TC_FOLDER}/btg-gcc-8.2.x-arm64
             [[ -z ${GCC_32_BIT_FOLDER} ]] && GCC_32_BIT_FOLDER=${TC_FOLDER}/btg-gcc-8.2.x-arm
 
-            [[ -n ${STABLE} ]] && KERNEL_BRANCH=pie
+            [[ -n ${STABLE} ]] && KERNEL_BRANCH=oreo
 
             MATCH_FLAG="${DEVICE_NAME_FILE}-v${VERSION::1}" ;;
 
