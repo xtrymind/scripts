@@ -153,7 +153,7 @@ function parse_parameters() {
     [[ ${MODE} = "stable" ]] && STABLE=true
     [[ ${MODE} = "tmp" ]] && TMP=true
 
-    [[ -z ${DEVICE} ]] && DEVICE="mido"
+    [[ -z ${DEVICE} ]] && DEVICE="x00td"
 
 }
 
@@ -489,7 +489,7 @@ function build_kernel() {
     [[ -n ${CACHED_BRANCH} ]] && git ch ${HIDDEN_COMMANDS:+ "-q"} "${CACHED_BRANCH}"
 
     case ${DEVICE} in
-        "mido")
+        "x00td")
             FILES_TO_MOVE=( "arch/arm64/boot/Image.gz-dtb:${ANYKERNEL2_FOLDER}" )
             ;;
     esac
