@@ -286,6 +286,8 @@ function generate_variables() {
                           -mtune=cortex-a53 \
                           -O3" ;;
         esac
+
+        CC="${CROSS_COMPILE}"
     fi
 
     # Handle Clang
