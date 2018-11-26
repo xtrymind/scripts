@@ -281,9 +281,6 @@ function generate_variables() {
                           -ftree-loop-distribution \
                           -ffast-math \
                           -funsafe-math-optimizations \
-                          -mcpu=cortex-a53 \
-                          -march=armv8-a \
-                          -mtune=cortex-a53 \
                           -O3" ;;
         esac
 
