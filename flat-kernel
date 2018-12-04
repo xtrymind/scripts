@@ -273,15 +273,14 @@ function generate_variables() {
         [[ -z ${CROSS_COMPILE_ARM32} ]] && die "32-bit GCC toolchain could not be found!"
     fi
 
-    if [[ ${COMPILER} = "gcc" ]]; then
+    if [[ ${COMPILER} = "gcc" && ${DEVICE} = "x00td" ]]; then
         case "$(basename "${GCC_FOLDER}")" in
-             "btg-gcc-8.2.x-arm64")
+             "btg-gcc-8.2.x-arm64"|"btg-gcc-7.3.1-arm64-linaro"|"btg-gcc-6.5.0-arm64-linaro")
                  KCFLAGS="-floop-nest-optimize \
                           -fgraphite-identity \
                           -ftree-loop-distribution \
                           -ffast-math \
-                          -funsafe-math-optimizations \
-                          -O3" ;;
+                          -funsafe-math-optimizations" ;;
         esac
 
         CC="${CROSS_COMPILE}"
