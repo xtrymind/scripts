@@ -204,7 +204,7 @@ function device_flags() {
                 fi
             fi
 
-            [[ -z ${GCC_FOLDER} ]] && GCC_FOLDER=${TC_FOLDER}/btg-gcc-8.2.x-arm64
+            [[ -z ${GCC_FOLDER} ]] && GCC_FOLDER=${TC_FOLDER}/btg-gcc-6.5.0-arm64-linaro
             [[ -z ${GCC_32_BIT_FOLDER} ]] && GCC_32_BIT_FOLDER=${TC_FOLDER}/btg-gcc-8.2.x-arm
 
             [[ -n ${STABLE} ]] && KERNEL_BRANCH=oreo
@@ -280,7 +280,8 @@ function generate_variables() {
                           -fgraphite-identity \
                           -ftree-loop-distribution \
                           -ffast-math \
-                          -funsafe-math-optimizations" ;;
+                          -funsafe-math-optimizations \
+                          -mcpu=cortex-a73.cortex-a53+crc+crypto" ;;
         esac
 
         CC="${CROSS_COMPILE}"
