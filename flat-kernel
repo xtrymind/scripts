@@ -520,7 +520,11 @@ function move_kernel_files() {
     # Grab modules too if they are present
     MODULES="$(find "${OUT_FOLDER}" -name '*.ko')"
     if [[ -n ${MODULES} ]]; then
-        MODULES_FOLDER=${ANYKERNEL2_FOLDER}/modules/system/lib/modules
+        if [[ ${DEVICE} = "x00td" ]]; then
+            MODULES_FOLDER=${ANYKERNEL2_FOLDER}/modules/vendor/lib/modules
+        else
+            MODULES_FOLDER=${ANYKERNEL2_FOLDER}/modules/system/lib/modules
+        fi
         mkdir -p "${MODULES_FOLDER}"
         for MOD in ${MODULES}; do
             "${CC}"strip --strip-unneeded "${MOD}"
