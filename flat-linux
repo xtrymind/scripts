@@ -68,6 +68,15 @@ function generate_variables() {
     # Kernel name
     LOCALVERSION="flat"
 
+    # Check for notebook
+    MODEL=$(lscpu | grep "Model name" | sed -r 's/Model name:\s{1,}(.*) CPU .*z\s*/\1/g' | cut -c19-)
+    case ${MODEL} in
+        i3-3217U)
+            i3_3217U=true ;;
+         *)
+            die "Invalid devices" ;;
+    esac
+
     DEFCONFIG="flat_defconfig"
 
     # Check if have dkms
@@ -96,6 +105,13 @@ function compile(){
              -O3"
 
     make ${DEFCONFIG} prepare
+
+    if [[ -n ${i3_3217U} ]]; then
+        ./scripts/config --file .config -d CONFIG_MSANDYBRIDGE
+        ./scripts/config --file .config -e CONFIG_MIVYBRIDGE
+        make olddefconfig
+    fi
+
     if [[ -n ${SHOW_OUTPUT} ]]; then
         make "${JOBS_FLAG}" \
         KCFLAGS="${KCFLAGS}"
