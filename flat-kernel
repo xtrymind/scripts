@@ -205,7 +205,7 @@ function device_flags() {
             fi
 
             [[ -z ${GCC_FOLDER} ]] && GCC_FOLDER=${TC_FOLDER}/btg-gcc-6.5.0-arm64-linaro
-            [[ -z ${GCC_32_BIT_FOLDER} ]] && GCC_32_BIT_FOLDER=${TC_FOLDER}/btg-gcc-8.2.x-arm
+            [[ -z ${GCC_32_BIT_FOLDER} ]] && GCC_32_BIT_FOLDER=${TC_FOLDER}/btg-gcc-8.2.1-arm
 
             [[ -n ${STABLE} ]] && KERNEL_BRANCH=oreo
 
@@ -275,7 +275,7 @@ function generate_variables() {
 
     if [[ ${COMPILER} = "gcc" && ${DEVICE} = "X00TD" ]]; then
         case "$(basename "${GCC_FOLDER}")" in
-             "btg-gcc-8.2.x-arm64"|"btg-gcc-7.3.1-arm64-linaro"|"btg-gcc-6.5.0-arm64-linaro")
+             "btg-gcc-8.2.1-arm64"|"btg-gcc-7.3.1-arm64-linaro"|"btg-gcc-6.5.0-arm64-linaro")
                  KCFLAGS="-floop-nest-optimize \
                           -fgraphite-identity \
                           -ftree-loop-distribution \
