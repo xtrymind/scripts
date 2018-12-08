@@ -73,8 +73,6 @@ function generate_variables() {
     case ${MODEL} in
         i3-3217U)
             i3_3217U=true ;;
-         *)
-            die "Invalid devices" ;;
     esac
 
     DEFCONFIG="flat_defconfig"
