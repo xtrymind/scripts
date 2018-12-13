@@ -105,8 +105,8 @@ function compile(){
     make ${DEFCONFIG} prepare
 
     if [[ -n ${i3_3217U} ]]; then
-        ./scripts/config --file .config -d CONFIG_MSANDYBRIDGE
-        ./scripts/config --file .config -e CONFIG_MIVYBRIDGE
+        ./scripts/config --file .config -d CONFIG_OPTIMIZE_FOR_2500
+        ./scripts/config --file .config -e CONFIG_OPTIMIZE_FOR_3217U
         make olddefconfig
     fi
 
