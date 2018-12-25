@@ -17,12 +17,12 @@ function parse_parameters() {
     while [[ ${#} -ge 1 ]]; do
         case ${1} in
             # build only
-            "-b"|"--buildonly")
-                BUILDONLY=true ;;
+            "-io"|"--image-only")
+                IMAGE_ONLY=true ;;
 
             # build without cleaning
             "-nc"|"--noclean")
-                NOCLEAN=true ;;
+                NO_CLEAN=true ;;
 
             # How much script output to show
             "-V"|"--verbosity-level")
@@ -88,7 +88,7 @@ function generate_variables() {
 function clean_up() {
     # Only cd if kernel source exist
     cd "${SOURCE_FOLDER}" || die "Kernel source is missing!"
-    if [[ -z ${NOCLEAN} ]]; then
+    if [[ -z ${NO_CLEAN} ]]; then
         make clean && make mrproper
     fi
 }
@@ -183,7 +183,7 @@ parse_parameters "${@}"
 generate_variables
 clean_up
 compile
-if [[ -z ${BUILDONLY} ]]; then
+if [[ -z ${IMAGE_ONLY} ]]; then
     install_kernel
     sanitycheck
 fi
