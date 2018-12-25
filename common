@@ -174,7 +174,7 @@ function clang_version() {
     fi
 
     case "${CLANG}" in
-        *aosp*) POS="1,2" ;;
+        *linux-x86*) POS="1,2" ;;
         *) POS="1" ;;
     esac
     "${CLANG}" --version | head -n 1 | cut -d \( -f "${POS}" | sed 's/[[:space:]]*$//' || display_error "Something went wrong!"
