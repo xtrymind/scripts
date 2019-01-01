@@ -449,7 +449,7 @@ function print_variables() {
 # Build kernel image
 function build_kernel() {
     # Clean source folder
-    git clean -dfx ${HIDDEN_COMMANDS:+ "-q"}
+    git clean -dfx --exclude=out/.version ${HIDDEN_COMMANDS:+ "-q"}
 
     # Point to proper defconfig and generate version files
     kmake ${DEFCONFIG} prepare
