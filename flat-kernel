@@ -529,10 +529,12 @@ function move_kernel_files() {
         mkdir -p "${MODULES_FOLDER}"
         for MOD in ${MODULES}; do
             "${CROSS_COMPILE}"strip --strip-unneeded "${MOD}"
-            "${OUT_FOLDER}"/scripts/sign-file sha512 \
-                                              "${OUT_FOLDER}/certs/signing_key.pem" \
-                                              "${OUT_FOLDER}/certs/signing_key.x509" \
-                                              "${MOD}"
+            if [[ -f "${OUT_FOLDER}"/scripts/sign-file ]]; then
+                "${OUT_FOLDER}"/scripts/sign-file sha512 \
+                                                  "${OUT_FOLDER}/certs/signing_key.pem" \
+                                                  "${OUT_FOLDER}/certs/signing_key.x509" \
+                                                  "${MOD}"
+            fi
             cp "${MOD}" "${MODULES_FOLDER}"
         done
     fi
