@@ -3,8 +3,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 # Copyright (C) 2016-2018 Nathan Chancellor
+# Copyright (C) 2018-2019 Dede Dindin Qudsy
 #
-# Flash Kernel compilation script
+# Flat Kernel compilation script
 
 
 ###############
