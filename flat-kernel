@@ -374,6 +374,7 @@ function make_wrapper_clang() {
          CROSS_COMPILE="${CROSS_COMPILE}" \
          CROSS_COMPILE_ARM32="${CROSS_COMPILE_ARM32}" \
          HOSTCC="${CCACHE} clang" \
+         HOSTLD=ld.lld \
          KBUILD_COMPILER_STRING="${CLANG_VERSION}" \
          KBUILD_BUILD_VERSION="${KBUILD_BUILD_VERSION}" \
          KCFLAGS="${KCFLAGS}" \
