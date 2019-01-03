@@ -303,15 +303,20 @@ function generate_variables() {
         CLANG_VERSION=$(clang_version "${CLANG_BIN}")
         case "$(basename "${CLANG_FOLDER}")" in
             "clang-8.x")
-                if [[ -n ${PERSONAL_OPTS} ]]; then
-                    KCFLAGS="-mllvm -polly \
-                             -mllvm -polly-run-dce \
-                             -mllvm -polly-run-inliner \
-                             -mllvm -polly-opt-fusion=max \
-                             -mllvm -polly-ast-use-context \
-                             -mllvm -polly-vectorizer=stripmine \
-                             -mllvm -polly-detect-keep-going"
-                fi ;;
+                KCFLAGS="-mllvm -polly \
+                         -mllvm -polly-run-dce \
+                         -mllvm -polly-run-inliner \
+                         -mllvm -polly-opt-fusion=max \
+                         -mllvm -polly-ast-use-context \
+                         -mllvm -polly-vectorizer=stripmine \
+                         -mllvm -polly-detect-keep-going \
+                         -march=armv8-a+crypto+crc \
+                         -mcpu=cortex-a53+crypto+crc"
+                ;;
+            "linux-x86")
+                KCFLAGS="-march=armv8-a+crypto+crc \
+                         -mcpu=cortex-a53+crypto+crc"
+                ;;
         esac
     fi
 
