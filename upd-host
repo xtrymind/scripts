@@ -32,7 +32,7 @@ done
 [[ -z ${EX} ]] && EX="fakenews gambling"
 
 # Existence sanity checks
-cd "${HOME}/github/hosts" || die "Hosts folder doesn't exist, please clone!"
+cd "${HOME}/local/github/hosts" || die "Hosts folder doesn't exist, please clone!"
 
 # Update the repo
 header "Updating repos"
@@ -41,9 +41,9 @@ git reset --hard origin/master
 
 # Copy additional host
 header "Copy Additional host, blacklist, and whitelist if exist"
-[[ -f ${HOME}/github/myhosts ]] && cp -v "${HOME}/github/myhosts" .
-[[ -f ${HOME}/github/whitelist ]] && cp -v "${HOME}/github/whitelist" .
-[[ -f ${HOME}/github/blacklist ]] && cp -v "${HOME}/github/blacklist" .
+[[ -f ${HOME}/local/github/myhosts ]] && cp -v "${HOME}/local/github/myhosts" .
+[[ -f ${HOME}/local/github/whitelist ]] && cp -v "${HOME}/local/github/whitelist" .
+[[ -f ${HOME}/local/github/blacklist ]] && cp -v "${HOME}/local/github/blacklist" .
 
 # Updating Host
 header "Updating Host File"
