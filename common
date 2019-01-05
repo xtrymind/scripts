@@ -36,9 +36,11 @@ if [ -d "${HOME}/repo/comvert" ] ; then
 fi
 
 # Use ccache
-export USE_CCACHE=1;
-if [[ -z "${CCACHE_DIR}" ]]; then
-    export CCACHE_DIR="${HOME}/local/.ccache";
+if [[ -f ${CCACHE} ]]; then
+    ccache -M 20G &> /dev/null
+    ccache --set-config=compression=true
+    ccache --set-config=compression_level=9
+    export USE_CCACHE=1;
 fi
 
 # Sync repo
