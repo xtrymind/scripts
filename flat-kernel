@@ -232,7 +232,7 @@ function get_cc_prefix() {
 function generate_variables() {
     # Folders
     SOURCE_FOLDER=${KERNEL_FOLDER}/${DEVICE_NAME_GITHUB}
-    OUT_FOLDER=${SOURCE_FOLDER}/out
+    OUT_FOLDER=${HOME}/kernel/${DEVICE_NAME_GITHUB}
 
     if [[ -z ${IMAGE_ONLY} ]]; then
         ANYKERNEL2_FOLDER=${KERNEL_FOLDER}/anykernel2-${DEVICE_NAME_GITHUB}
@@ -455,36 +455,36 @@ function print_variables() {
 
 # Build kernel image
 function build_kernel() {
-    # Clean source folder
-    git clean -dfx --exclude=out/.version ${HIDDEN_COMMANDS:+ "-q"}
+    # Clean out folder
+    rm -rf ${OUT_FOLDER}
 
     # Point to proper defconfig and generate version files
     kmake ${DEFCONFIG} prepare
 
     # If we want to build with KASAN, do it now
     if [[ -n ${KASAN} ]]; then
-        ./scripts/config --file out/.config -e CONFIG_KASAN \
-                                            -e CONFIG_KASAN_INLINE \
-                                            -e CONFIG_TEST_KASAN \
-                                            -e CONFIG_KCOV \
-                                            -e CONFIG_SLUB \
-                                            -e CONFIG_SLUB_DEBUG \
-                                            -e CONFIG_SLUB_DEBUG_ON \
-                                            -d CONFIG_SLUB_DEBUG_PANIC_ON \
-                                            -d CONFIG_KASAN_OUTLINE \
-                                            -d CONFIG_KERNEL_LZ4 \
-                                            --set-val CONFIG_FRAME_WARN 0
+        ./scripts/config --file ${OUT_FOLDER}/.config -e CONFIG_KASAN \
+                                                      -e CONFIG_KASAN_INLINE \
+                                                      -e CONFIG_TEST_KASAN \
+                                                      -e CONFIG_KCOV \
+                                                      -e CONFIG_SLUB \
+                                                      -e CONFIG_SLUB_DEBUG \
+                                                      -e CONFIG_SLUB_DEBUG_ON \
+                                                      -d CONFIG_SLUB_DEBUG_PANIC_ON \
+                                                      -d CONFIG_KASAN_OUTLINE \
+                                                      -d CONFIG_KERNEL_LZ4 \
+                                                      --set-val CONFIG_FRAME_WARN 0
         kmake olddefconfig
     fi
 
     # If requested, disable -Werror
     if [[ -n ${NO_WERROR} ]]; then
-        ./scripts/config --file out/.config -d CONFIG_CC_WERROR
+        ./scripts/config --file ${OUT_FOLDER}/.config -d CONFIG_CC_WERROR
         kmake olddefconfig
     fi
 
     if [[ -n ${PERSONAL} ]]; then
-        ./scripts/config --file out/.config -e CONFIG_WIREGUARD_DEBUG
+        ./scripts/config --file ${OUT_FOLDER}/.config -e CONFIG_WIREGUARD_DEBUG
         kmake olddefconfig
     fi
 
