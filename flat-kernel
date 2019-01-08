@@ -322,22 +322,15 @@ function clean_up() {
     # Clean AnyKernel2 folder if building a zip
     if [[ -n ${ANYKERNEL2_FOLDER} ]]; then
         cd "${ANYKERNEL2_FOLDER}" || die "AnyKernel2 source is missing!"
-
-        #[[ -z ${ANYKERNEL2_BRANCH} ]] && ANYKERNEL2_BRANCH=${DEVICE_NAME_GITHUB}-flash-${AK2_SFX}
-
-        #git checkout ${HIDDEN_COMMANDS:+ "-q"} "${ANYKERNEL2_BRANCH}"
         git clean -fxd ${HIDDEN_COMMANDS:+ "-q"}
     fi
 
-    # Only checkout if kernel_branch exists and we aren't bisecting or rebasing
+    # Clean kernel source folder
     cd "${SOURCE_FOLDER}" || die "Kernel source is missing!"
-    if [[ -n ${KERNEL_BRANCH} ]]; then
-        [[ ${KERNEL_BRANCH} =~ "queue-" ]] && CACHED_BRANCH=$(git cb)
-        if [[ -z $(git status | rg "bisec|rebas") ]]; then
-            git checkout ${HIDDEN_COMMANDS:+ "-q"} "${KERNEL_BRANCH}" || die "${KERNEL_BRANCH} doesn't exist!"
-        fi
-    fi
-    [[ -z ${HIDDEN_COMMANDS} ]] && echo
+    git clean -fxd ${HIDDEN_COMMANDS:+ "-q"}
+
+    # Clean out folder in a case out folder not on kernel source
+    [[ -d ${OUT_FOLDER} ]] && rm -rf ${OUT_FOLDER}
 }
 
 # Make wrapper for make function for GCC
@@ -439,9 +432,6 @@ function print_variables() {
 
 # Build kernel image
 function build_kernel() {
-    # Clean out folder
-    rm -rf ${OUT_FOLDER}
-
     # Point to proper defconfig and generate version files
     kmake ${DEFCONFIG} prepare
 
