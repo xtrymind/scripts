@@ -220,3 +220,52 @@ function add_remote() {
         git remote add "${1}" "${2}"
     fi
 }
+
+# Source Telegram bot information
+function load_botinfo() {
+    [[ -f ${HOME}/.botinfo ]] && source ~/.botinfo
+}
+load_botinfo
+
+# Telegram notifier function
+function tg_msg() {
+    if [[ -z ${TOKEN} ]]; then
+        display_error "tg_msg() was called but there was no token!"
+        return 1
+    fi
+
+    if [[ -z ${CHAT_ID} ]]; then
+        display_error "tg_msg() was called but there was no chat ID!"
+        return 1
+    fi
+
+    curl -s -X POST https://api.telegram.org/bot"${TOKEN}"/sendMessage \
+            -d chat_id="${CHAT_ID}" \
+            -d parse_mode="Markdown" \
+            -d text="${*}" 1>/dev/null
+}
+
+# Telegram uploader function
+function tg_upload() {
+    local FILE; FILE=${1}; shift
+
+    if [[ -z ${TOKEN} ]]; then
+        display_error "tg_upload() was called but there was no token!"
+        return 1
+    fi
+
+    if [[ -z ${CHAT_ID} ]]; then
+        display_error "tg_upload() was called but there was no chat ID!"
+        return 1
+    fi
+
+    if [[ ! -f ${FILE} ]]; then
+        display_error "tg_upload() failed to find ${FILE}!"
+        return 1
+    fi
+
+    curl -s -F chat_id="${CHAT_ID}" \
+            -F document=@"${FILE}" \
+            -F caption="${*}" \
+            -X POST https://api.telegram.org/bot"${TOKEN}"/sendDocument 1>/dev/null
+}
