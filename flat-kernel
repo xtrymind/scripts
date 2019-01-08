@@ -387,17 +387,14 @@ function generate_version() {
     fi
 
     # If the mode isn't stable, add hash information to the file for debugging
-    if [[ -z ${STABLE} && ${DEVICE} != "op6-custom" ]]; then
-        # Furthermore, if it is a personal build, use a shorter hash length
-        [[ -n ${PERSONAL} ]] && NUM=8 || NUM=12
-        SHA="-g$(git rev-parse --verify --short=${NUM} HEAD)"
-        LOCALVERSION="${LOCALVERSION}${SHA}"
+    [[ -n ${PERSONAL} ]] && NUM=8 || NUM=12
+    SHA="-g$(git rev-parse --verify --short=${NUM} HEAD)"
+    LOCALVERSION="${LOCALVERSION}${SHA}"
 
-        # Don't add the hash to the zip name for personal builds, use the date instead
-        if [[ -n ${PERSONAL} ]]; then
-            unset SHA
-            DATE="-$(date +%Y%m%d-%H%M)"
-        fi
+    # Don't add the hash to the zip name for personal builds, use the date instead
+    if [[ -n ${PERSONAL} ]]; then
+        unset SHA
+        DATE="-$(date +%Y%m%d-%H%M)"
     fi
 
     # If there are uncommitted changes, mark as dirty
