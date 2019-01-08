@@ -688,6 +688,7 @@ function ending_info() {
             echo "kernel build successfully for ${DEVICE} in ${DURATION,,}"
             echo
             echo "Version: $(cat "${OUT_FOLDER}/include/config/kernel.release")"
+            echo "Android: ${ANDROID_VERSION}"
             echo "\`\`\`"
         } > "${TG_MSG_FILE}"
             tg_msg "$(cat "${TG_MSG_FILE}")"
