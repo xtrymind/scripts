@@ -719,9 +719,24 @@ function ending_info() {
             echo "SIZE: ${SIZE}${RST}"
         fi
 
+        if [[ -n ${TG} ]]; then
+            {
+                echo "\`\`\`"
+                echo "kernel build successfully for ${DEVICE} in ${DURATION,,}"
+                echo
+                echo "Version: $(cat "${OUT_FOLDER}/include/config/kernel.release")"
+                echo "\`\`\`"
+            } > "${TG_MSG_FILE}"
+            tg_msg "$(cat "${TG_MSG_FILE}")"
+        fi
+
         EXIT_CODE=0
     else
         echo "DURATION:   ${DURATION,,}"
+        if [[ -n ${TG} ]]; then
+            load_botinfo
+            tg_msg "\`Build failed in ${DURATION,,}\`"
+        fi
         EXIT_CODE=1
     fi
 
