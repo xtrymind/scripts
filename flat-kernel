@@ -572,18 +572,6 @@ function package_zip() {
     else
         echo "${GRN}Kernel zip successfully generated!${RST}\n"
     fi
-
-    if [[ -n ${CANARY} ]]; then
-        local TMP_FILE
-        TMP_FILE=$(mktemp)
-        {
-            echo "$(date +%Y%m%d)-canary"
-            echo
-            echo "To learn more, type #canary in the discussion group"
-        } > "${TMP_FILE}"
-        tg_upload "${SIGNED_ZIP}" "$(cat "${TMP_FILE}")"
-        rm -rf "${TMP_FILE}"
-    fi
 }
 
 
@@ -728,6 +716,7 @@ function ending_info() {
                 echo "\`\`\`"
             } > "${TG_MSG_FILE}"
             tg_msg "$(cat "${TG_MSG_FILE}")"
+            tg_upload "${FILE_MOVE}/${SIGNED_ZIP}"
         fi
 
         EXIT_CODE=0
