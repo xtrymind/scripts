@@ -598,7 +598,7 @@ function ending_info() {
                 SIZE=$(du -h "${FILE_LOCATION}" | awk '{print $1}')
             fi
 
-            echo "${RED}FILE LOCATION: ${FILE_LOCATION}"
+            echo "${GRN}FILE LOCATION: ${FILE_LOCATION}"
             echo "SIZE: ${SIZE}${RST}"
         fi
 
@@ -623,7 +623,7 @@ function ending_info() {
         EXIT_CODE=1
     fi
 
-    echo "${RED}DURATION: ${DURATION}${RST}"
+    echo "${GRN}DURATION: ${DURATION}${RST}"
     echo
     echo "\a"
     exit ${EXIT_CODE}
