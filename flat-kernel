@@ -432,36 +432,11 @@ function build_kernel() {
     # Point to proper defconfig and generate version files
     kmake ${DEFCONFIG} prepare
 
-    # If we want to build with KASAN, do it now
-    if [[ -n ${KASAN} ]]; then
-        ./scripts/config --file ${OUT_FOLDER}/.config -e CONFIG_KASAN \
-                                                      -e CONFIG_KASAN_INLINE \
-                                                      -e CONFIG_TEST_KASAN \
-                                                      -e CONFIG_KCOV \
-                                                      -e CONFIG_SLUB \
-                                                      -e CONFIG_SLUB_DEBUG \
-                                                      -e CONFIG_SLUB_DEBUG_ON \
-                                                      -d CONFIG_SLUB_DEBUG_PANIC_ON \
-                                                      -d CONFIG_KASAN_OUTLINE \
-                                                      -d CONFIG_KERNEL_LZ4 \
-                                                      --set-val CONFIG_FRAME_WARN 0
-        kmake olddefconfig
-    fi
-
     # If requested, disable -Werror
     if [[ -n ${NO_WERROR} ]]; then
         ./scripts/config --file ${OUT_FOLDER}/.config -d CONFIG_CC_WERROR
         kmake olddefconfig
     fi
-
-    if [[ -n ${PERSONAL} ]]; then
-        ./scripts/config --file ${OUT_FOLDER}/.config -e CONFIG_WIREGUARD_DEBUG
-        kmake olddefconfig
-    fi
-
-    # Notify Telegram of build starting
-    SHORT_CHANGELOG=${HOME}/shortlogs/${DEVICE_NAME_FILE,,}-${VERSION//./}
-    [[ ! -f ${SHORT_CHANGELOG} && -n "${TEST}${STABLE}" ]] && die "Missing short changelog!"
 
     # Make the kernel
     kmake ${EXTRA_MAKE_FLAGS:+ "${EXTRA_MAKE_FLAGS[@]}"}
@@ -580,65 +555,21 @@ function setup_folders() {
 # Move files and generate md5 files
 function move_flashable_files() {
     echo "  - Moving files"
-
     (
         cd "${FILE_MOVE}" || die "Shift to ending folder failed!"
         mv "${ANYKERNEL2_FOLDER}/${SIGNED_ZIP}" "${FILE_MOVE}"
         md5sum "${SIGNED_ZIP}" > "${FILE_MOVE}/${SIGNED_ZIP}.md5"
-        if [[ -n ${TEST} || -n ${STABLE} ]]; then
-            cp "${SHORT_CHANGELOG}" "${KERNEL_NAME,,}-changelog.txt"
-            if [[ -n ${STABLE} ]]; then
-                ln -sf "${KERNEL_NAME,,}-changelog.txt" .changelog
-                echo "${VERSION}" > .version
-            fi
-        fi
     )
-}
-
-
-#Ppush kernel files (zips/images) to GitHub
-function push_flashable_files() {
-    echo "  - Pushing files to GitHub"
-
-    cd "${FILE_MOVE}" || die "Zip folder doesn't exist!"
-
-    git add ..
-
-    git commit --gpg-sign ${HIDDEN_COMMANDS:+ "--quiet"} --signoff --message "${KERNEL_NAME}"
-
-    git push ${HIDDEN_COMMANDS:+ "--quiet"}
-}
-
-# Tag for stable releases
-function tag_stable() {
-    echo "  - Tagging ${KERNEL_NAME} as stable"
-
-    for TAG_FOLDER in ${SOURCE_FOLDER} ${ANYKERNEL2_FOLDER}; do
-        cd "${TAG_FOLDER}" || die "Issue with moving into ${TAG_FOLDER}!"
-
-        git tag --sign --annotate "${KERNEL_NAME}" --message "${KERNEL_NAME}
-
-$(tail -n +2 "${SHORT_CHANGELOG}")"
-        git push ${HIDDEN_COMMANDS:+ "--quiet"} origin "${KERNEL_NAME}"
-    done
 }
 
 # After build tasks
 function after_build_tasks() {
     if [[ -z ${IMAGE_ONLY} ]]; then
         package_zip
-
         if [[ -n ${FILE_MOVE} ]]; then
             header "SHUFFLING FILES"
-
             setup_folders
             move_flashable_files
-
-            if [[ -z ${PERSONAL} ]]; then
-                [[ -z ${TMP} ]] && push_flashable_files
-                [[ -n ${STABLE} ]] && tag_stable
-            fi
-            echo
         fi
     fi
 }
