@@ -155,6 +155,7 @@ function parse_parameters() {
     [[ ${MODE} = "tmp" ]] && TMP=true
 
     [[ -z ${DEVICE} ]] && DEVICE="X00TD"
+    TG_MSG_FILE=$(mktemp)
 
 }
 
@@ -691,7 +692,7 @@ function ending_info() {
             echo "Android: ${ANDROID_VERSION}"
             echo "\`\`\`"
         } > "${TG_MSG_FILE}"
-            tg_msg "$(cat "${TG_MSG_FILE}")"
+        tg_msg "$(cat "${TG_MSG_FILE}")"
         if [[ -n ${TG} ]]; then
             tg_upload "${FILE_MOVE}/${SIGNED_ZIP}"
         fi
