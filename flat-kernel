@@ -7,13 +7,11 @@
 #
 # Flat Kernel compilation script
 
-
 ###############
 #             #
 #  FUNCTIONS  #
 #             #
 ###############
-
 
 # Gather parameters
 function parse_parameters() {
@@ -160,24 +158,20 @@ function parse_parameters() {
 
 }
 
-
 # 'cp -v' alias
 function cp() {
     command cp ${VERBOSE_COMMANDS:+ "-v"} "${@}"
 }
-
 
 # 'mv -v' alias
 function mv() {
     command mv ${VERBOSE_COMMANDS:+ "-v"} "${@}"
 }
 
-
 # 'rm -v' alias
 function rm() {
     command rm ${VERBOSE_COMMANDS:+ "-v"} "${@}"
 }
-
 
 # Device "board" flags
 function device_flags() {
@@ -219,12 +213,10 @@ function device_flags() {
     esac
 }
 
-
 # Automatically get cross compile prefix from GCC
 function get_cc_prefix() {
     find "${1}" \( -type f -o -type l \) -name '*-gcc' | head -n1 | sed 's@.*/@@' | sed 's/gcc//'
 }
-
 
 # Set up other variables
 function generate_variables() {
@@ -324,7 +316,6 @@ function generate_variables() {
     export LD_LIBRARY_PATH PATH
 }
 
-
 # Clean up
 function clean_up() {
     # Clean AnyKernel2 folder if building a zip
@@ -348,7 +339,6 @@ function clean_up() {
     [[ -z ${HIDDEN_COMMANDS} ]] && echo
 }
 
-
 # Make wrapper for make function for GCC
 function make_wrapper_gcc() {
     make "${JOBS_FLAG}" \
@@ -361,7 +351,6 @@ function make_wrapper_gcc() {
          O="${OUT_FOLDER}" \
          "${@}"
 }
-
 
 # Make wrapper for make function for Clang
 function make_wrapper_clang() {
@@ -381,7 +370,6 @@ function make_wrapper_clang() {
          "${@}"
 }
 
-
 # Silence output function
 function kmake() {
     # Only show errors and warnings when compiling (unless debug)
@@ -391,7 +379,6 @@ function kmake() {
         make_wrapper_${COMPILER} "${@}" |& rg --color=never --after-context=${RG_LINES:-10} "error:|warning:" && echo
     fi
 }
-
 
 # Setup compilation
 function generate_version() {
@@ -438,7 +425,6 @@ function generate_version() {
     SIGNED_ZIP=${KERNEL_NAME,,}.zip
 }
 
-
 # Print variables
 function print_variables() {
     echo "${BOLD}Device:${RST}     ${DEVICE}\n"
@@ -449,7 +435,6 @@ function print_variables() {
 
     echo "${BOLD}GCC:${RST}        $(command -v "${CROSS_COMPILE}"gcc)\n"
 }
-
 
 # Build kernel image
 function build_kernel() {
@@ -516,7 +501,6 @@ function build_kernel() {
     fi
 }
 
-
 # Move kernel files after compilation
 function move_kernel_files() {
     # Move the kernel image
@@ -544,7 +528,6 @@ function move_kernel_files() {
     fi
 }
 
-
 # Package zip
 function package_zip() {
     header "PACKAGING AND SIGNING ZIP"
@@ -571,7 +554,6 @@ function package_zip() {
         echo "${GRN}Kernel zip successfully generated!${RST}\n"
     fi
 }
-
 
 # Setup folders
 function setup_folders() {
@@ -607,7 +589,6 @@ function setup_folders() {
     fi
 }
 
-
 # Move files and generate md5 files
 function move_flashable_files() {
     echo "  - Moving files"
@@ -640,7 +621,6 @@ function push_flashable_files() {
     git push ${HIDDEN_COMMANDS:+ "--quiet"}
 }
 
-
 # Tag for stable releases
 function tag_stable() {
     echo "  - Tagging ${KERNEL_NAME} as stable"
@@ -654,7 +634,6 @@ $(tail -n +2 "${SHORT_CHANGELOG}")"
         git push ${HIDDEN_COMMANDS:+ "--quiet"} origin "${KERNEL_NAME}"
     done
 }
-
 
 # After build tasks
 function after_build_tasks() {
@@ -675,7 +654,6 @@ function after_build_tasks() {
         fi
     fi
 }
-
 
 # Print file info
 function ending_info() {
@@ -731,8 +709,6 @@ function ending_info() {
     exit ${EXIT_CODE}
 }
 
-
-
 ################
 #              #
 # SCRIPT START #
@@ -762,7 +738,6 @@ echo
 echo
 echo "================================================================================================"
 echo
-
 
 #################
 # MAKING KERNEL #
