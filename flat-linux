@@ -20,6 +20,12 @@ function parse_parameters() {
             "-io"|"--image-only")
                 IMAGE_ONLY=true ;;
 
+            # localversion
+            "-lv"|"--localversion")
+                shift && enforce_value "${@}"
+
+                LOCALVERSION=${1} ;;
+
             # build without cleaning
             "-nc"|"--noclean")
                 NO_CLEAN=true ;;
@@ -66,7 +72,7 @@ function generate_variables() {
     SOURCE_FOLDER=${HOME}/local/linux-kernel/linux/
 
     # Kernel name
-    LOCALVERSION="flat"
+    [[ -z ${LOCALVERSION} ]] && LOCALVERSION="flat"
 
     # Check for notebook
     MODEL=$(lscpu | grep "Model name" | sed -r 's/Model name:\s{1,}(.*) CPU .*z\s*/\1/g' | cut -c19-)
