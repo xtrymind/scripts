@@ -223,7 +223,7 @@ function get_cc_prefix() {
 function generate_variables() {
     # Folders
     SOURCE_FOLDER=${KERNEL_FOLDER}/${DEVICE_NAME_GITHUB}
-    OUT_FOLDER=${HOME}/kernel/${DEVICE_NAME_GITHUB}/out
+    OUT_FOLDER=${SOURCE_FOLDER}/out
 
     if [[ -z ${IMAGE_ONLY} ]]; then
         ANYKERNEL2_FOLDER=${KERNEL_FOLDER}/anykernel2-${DEVICE_NAME_GITHUB}
