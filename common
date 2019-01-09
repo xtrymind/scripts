@@ -9,6 +9,10 @@ TC_FOLDER=${HOME}/local/toolchains
 FOLDER_MAGISK=${HOME}/repo/magisk-files
 KERNEL_FOLDER=${HOME}/local/kernel
 BIN_FOLDER=${HOME}/bin
+LINUX_FOLDER=${HOME}/local/linux-kernel/linux
+
+# Export
+export LINUX_FOLDER
 
 # Colors
 BLINK_RED="\033[05;31m"
