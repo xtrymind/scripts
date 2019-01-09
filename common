@@ -38,8 +38,9 @@ fi
 # Use ccache
 export USE_CCACHE=true;
 export PATH="/usr/lib/ccache/bin/:$PATH"
+export CCACHE_DIR=${HOME}/local/.ccache
 if [[ ! -d ${CCACHE_DIR} ]]; then
-    ccache -M 20G &> /dev/null
+    ccache -M 40G &> /dev/null
     ccache --set-config=compression=true
     ccache --set-config=compression_level=9
 fi
