@@ -489,9 +489,8 @@ function move_kernel_files() {
             fi
             cp "${MOD}" "${MODULES_FOLDER}"
         done
-        if [[ ${ANDROID_VERSION} = "8.1.0" && ${DEVICE} = "X00TD" ]]; then
-            mkdir -p ${VENDOR_MODULES_FOLDER}/qca_cld3
-            mv ${MODULES_FOLDER}/wlan.ko ${VENDOR_MODULES_FOLDER}/qca_cld3/qca_cld3_wlan.ko
+        if [[ ${DEVICE} = "X00TD" ]]; then
+            mkdir -p "${VENDOR_MODULES_FOLDER}"
             mv ${MODULES_FOLDER}/msm_11ad_proxy.ko ${VENDOR_MODULES_FOLDER}/msm_11ad_proxy.ko
         fi
     fi
