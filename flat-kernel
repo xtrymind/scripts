@@ -477,6 +477,7 @@ function move_kernel_files() {
     MODULES="$(find "${OUT_FOLDER}" -name '*.ko')"
     if [[ -n ${MODULES} ]]; then
         MODULES_FOLDER=${ANYKERNEL2_FOLDER}/modules/system/lib/modules
+        VENDOR_MODULES_FOLDER=${ANYKERNEL2_FOLDER}/modules/vendor/lib/modules
         mkdir -p "${MODULES_FOLDER}"
         for MOD in ${MODULES}; do
             "${CROSS_COMPILE}"strip --strip-unneeded "${MOD}"
@@ -488,6 +489,11 @@ function move_kernel_files() {
             fi
             cp "${MOD}" "${MODULES_FOLDER}"
         done
+        if [[ ${ANDROID_VERSION} = "8.1.0" && ${DEVICE} = "X00TD" ]]; then
+            mkdir -p ${VENDOR_MODULES_FOLDER}/qca_cld3
+            mv ${MODULES_FOLDER}/wlan.ko ${VENDOR_MODULES_FOLDER}/qca_cld3/qca_cld3_wlan.ko
+            mv ${MODULES_FOLDER}/msm_11ad_proxy.ko ${VENDOR_MODULES_FOLDER}/msm_11ad_proxy.ko
+        fi
     fi
 }
 
