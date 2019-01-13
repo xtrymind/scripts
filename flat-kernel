@@ -420,7 +420,8 @@ function generate_version() {
 function print_variables() {
     echo "${BOLD}Device:${RST}     ${DEVICE}\n"
 
-    echo "${BOLD}Branch:${RST}     $(git describe --exact-match 2>/dev/null || git cb) @ $(git kf)\n"
+    LAST_COMMIT=$(git kf)
+    echo "${BOLD}Branch:${RST}     $(git describe --exact-match 2>/dev/null || git cb) @ ${LAST_COMMIT}\n"
 
     [[ ${COMPILER} = "clang" ]] && echo "${BOLD}Clang:${RST}      $(command -v clang)\n"
 
@@ -609,10 +610,12 @@ function ending_info() {
 
         {
             echo "\`\`\`"
-            echo "kernel build successfully for ${DEVICE} in ${DURATION,,}"
+            echo "kernel build successfully in ${DURATION,,}"
             echo
+            echo "Device : ${DEVICE}"
             echo "Android: ${ANDROID_VERSION}"
             echo "Version: $(cat "${OUT_FOLDER}/include/config/kernel.release")"
+            echo "Commit : ${LAST_COMMIT}"
             echo "\`\`\`"
         } > "${TG_MSG_FILE}"
         tg_msg "$(cat "${TG_MSG_FILE}")"
