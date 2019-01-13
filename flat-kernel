@@ -327,10 +327,7 @@ function clean_up() {
 
     # Clean kernel source folder
     cd "${SOURCE_FOLDER}" || die "Kernel source is missing!"
-    git clean -fxd ${HIDDEN_COMMANDS:+ "-q"}
-
-    # Clean out folder in a case out folder not on kernel source
-    [[ -d ${OUT_FOLDER} ]] && rm -rf ${OUT_FOLDER}
+    git clean -dfx --exclude=out/.version ${HIDDEN_COMMANDS:+ "-q"}
 }
 
 # Make wrapper for make function for GCC
