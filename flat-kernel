@@ -402,7 +402,7 @@ function build_kernel() {
 
     # If requested, disable -Werror
     if [[ -n ${NO_WERROR} ]]; then
-        ./scripts/config --file ${OUT_FOLDER}/.config -d CONFIG_CC_WERROR
+        ./scripts/config --file "${OUT_FOLDER}"/.config -d CONFIG_CC_WERROR
         kmake olddefconfig
     fi
 
@@ -459,7 +459,7 @@ function move_kernel_files() {
         done
         if [[ ${DEVICE} = "X00TD" ]]; then
             mkdir -p "${VENDOR_MODULES_FOLDER}"
-            mv ${MODULES_FOLDER}/msm_11ad_proxy.ko ${VENDOR_MODULES_FOLDER}/msm_11ad_proxy.ko
+            mv "${MODULES_FOLDER}"/msm_11ad_proxy.ko "${VENDOR_MODULES_FOLDER}"/msm_11ad_proxy.ko
         fi
     fi
 }
