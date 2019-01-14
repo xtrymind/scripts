@@ -15,7 +15,6 @@
 
 # Gather parameters
 function parse_parameters() {
-    PARAMS="${*}"
     EXTRA_MAKE_FLAGS=()
     while [[ ${#} -ge 1 ]]; do
         case ${1} in
@@ -23,23 +22,11 @@ function parse_parameters() {
             "-ac"|"--aosp-clang")
                 AOSP_CLANG=true ;;
 
-            # AnyKernel2 branch
-            "-ak2-b"|"--anykernel2-branch")
-                shift && enforce_value "${@}"
-
-                ANYKERNEL2_BRANCH=${1} ;;
-
             # Android version
             "-av"|"--android-version")
                 shift && enforce_value "${@}"
 
                 ANDROID_VERSION=${1} ;;
-
-            # Branch to compile
-            "-b"|"--branch")
-                shift && enforce_value "${@}"
-
-                KERNEL_BRANCH=${1} ;;
 
             # Config to use for compiling
             "-c"|"--config")
@@ -87,20 +74,11 @@ function parse_parameters() {
             "-io"|"--image-only")
                 IMAGE_ONLY=true ;;
 
-            # Build with Kernel Address Sanitizer
-            "-k"|"--kasan")
-
-                KASAN=true ;;
-
             # Where to move zip after compilation
             "-m"|"--mode")
                 shift && enforce_value "${@}"
 
                 MODE=${1} ;;
-
-            # Apply personal optimizations
-            "-p"|"--personal-optimization")
-                PERSONAL_OPTS=true ;;
 
             # Test versioning (# in kernel version)
             "-r"|"--revision")
@@ -147,12 +125,7 @@ function parse_parameters() {
     [[ -z ${MODE} ]] && MODE="personal"
     [[ -z ${VERBOSITY_LEVEL} ]] && HIDDEN_COMMANDS=true
 
-    # Easy to use variables for if statements
-    [[ ${MODE} = "alpha" || ${MODE} = "beta" || ${MODE} = "rc" ]] && TEST=true
-    [[ ${MODE} = "canary" ]] && { CANARY=true; PERSONAL_OPTS=true; }
-    [[ ${MODE} = "personal" ]] && { PERSONAL=true; PERSONAL_OPTS=true; }
-    [[ ${MODE} = "stable" ]] && STABLE=true
-    [[ ${MODE} = "tmp" ]] && TMP=true
+    [[ ${MODE} = "personal" ]] && { PERSONAL=true; }
 
     [[ -z ${DEVICE} ]] && DEVICE="X00TD"
     TG_MSG_FILE=$(mktemp)
@@ -180,7 +153,6 @@ function device_flags() {
         "X00TD")
             # Required flags
             [[ -z ${ANDROID_VERSION} ]] && ANDROID_VERSION=8.1.0
-            AK2_SFX=${ANDROID_VERSION}
 
             BUILD_FUNCTION=build_kernel
 
@@ -204,8 +176,6 @@ function device_flags() {
 
             [[ -z ${GCC_FOLDER} ]] && GCC_FOLDER=${TC_FOLDER}/aarch64-linux-gnu-8.x
             [[ -z ${GCC_32_BIT_FOLDER} ]] && GCC_32_BIT_FOLDER=${TC_FOLDER}/btg-gcc-8.2.1-arm
-
-            [[ -n ${STABLE} ]] && KERNEL_BRANCH=oreo
 
             MATCH_FLAG="${DEVICE_NAME_FILE}-v${VERSION::1}" ;;
 
