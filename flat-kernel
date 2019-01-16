@@ -152,7 +152,7 @@ function device_flags() {
     case ${DEVICE} in
         "X00TD")
             # Required flags
-            [[ -z ${ANDROID_VERSION} ]] && ANDROID_VERSION=8.1.0
+            [[ -z ${ANDROID_VERSION} ]] && ANDROID_VERSION=9
 
             BUILD_FUNCTION=build_kernel
 
