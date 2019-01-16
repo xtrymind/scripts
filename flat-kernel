@@ -168,7 +168,7 @@ function device_flags() {
                 # SC2153: Possible misspelling: TC_FOLDER may not be assigned, but GCC_FOLDER is.
                 # shellcheck disable=SC2153
                 if [[ -n ${AOSP_CLANG} ]]; then
-                    CLANG_FOLDER=${TC_FOLDER}/linux-x86/clang-r346389b
+                    CLANG_FOLDER=${TC_FOLDER}/linux-x86/clang-r346389c
                 else
                     CLANG_FOLDER=${TC_FOLDER}/clang-8.x
                 fi
