@@ -406,6 +406,11 @@ function build_kernel() {
         kmake olddefconfig
     fi
 
+    if [[ -n ${PERSONAL} ]]; then
+        ./scripts/config --file "${OUT_FOLDER}"/.config -d CONFIG_LOCALVERSION_AUTO
+        kmake olddefconfig
+    fi
+
     # Make the kernel
     kmake ${EXTRA_MAKE_FLAGS:+ "${EXTRA_MAKE_FLAGS[@]}"}
 
