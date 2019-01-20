@@ -354,7 +354,7 @@ function generate_version() {
     fi
 
     # If the mode isn't stable, add hash information to the file for debugging
-    [[ -n ${PERSONAL} ]] && NUM=8 || NUM=12
+    [[ -n ${PERSONAL} ]] && NUM=12
     SHA="-g$(git rev-parse --verify --short=${NUM} HEAD)"
     LOCALVERSION="${LOCALVERSION}${SHA}"
 
