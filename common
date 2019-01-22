@@ -190,8 +190,12 @@ function clang_version() {
 
 # Common function for file management
 # make cbz file from all folder in current dirrectory
-function mkacbz() {
+function fmkacbz() {
     for dir in */; do base=$(basename "$dir"); zip -r9 "${base}.cbz" "$dir"; done
+}
+
+function mkacbz() {
+    zip -r9 ../${PWD##*/}.cbz *
 }
 
 # convert zip file to cbz in current dirrectory
