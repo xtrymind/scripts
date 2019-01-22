@@ -127,7 +127,7 @@ function parse_parameters() {
 
     [[ ${MODE} = "personal" ]] && { PERSONAL=true; }
 
-    [[ -z ${DEVICE} ]] && DEVICE="X00TD"
+    [[ -z ${DEVICE} ]] && DEVICE="X00T"
     TG_MSG_FILE=$(mktemp)
 
 }
@@ -150,7 +150,7 @@ function rm() {
 # Device "board" flags
 function device_flags() {
     case ${DEVICE} in
-        "X00TD")
+        "X00T")
             # Required flags
             [[ -z ${ANDROID_VERSION} ]] && ANDROID_VERSION=9
 
@@ -161,7 +161,7 @@ function device_flags() {
             [[ -z ${DEFCONFIG} ]] && DEFCONFIG="flat_defconfig"
 
             DEVICE_NAME_FILE=${DEVICE^}
-            DEVICE_NAME_GITHUB=X00TD
+            DEVICE_NAME_GITHUB=X00T
             DEVICE_NAME_WEB=${DEVICE}
 
             if [[ -z ${CLANG_FOLDER} ]]; then
@@ -239,7 +239,7 @@ function generate_variables() {
         [[ -z ${CROSS_COMPILE_ARM32} ]] && die "32-bit GCC toolchain could not be found!"
     fi
 
-    if [[ ${COMPILER} = "gcc" && ${DEVICE} = "X00TD" ]]; then
+    if [[ ${COMPILER} = "gcc" && ${DEVICE} = "X00T" ]]; then
         case "$(basename "${GCC_FOLDER}")" in
              "btg-gcc-8.2.1-arm64"|"btg-gcc-7.3.1-arm64-linaro"|"btg-gcc-6.5.0-arm64-linaro")
                  KCFLAGS="-floop-nest-optimize \
@@ -417,7 +417,7 @@ function build_kernel() {
     [[ -n ${CACHED_BRANCH} ]] && git ch ${HIDDEN_COMMANDS:+ "-q"} "${CACHED_BRANCH}"
 
     case ${DEVICE} in
-        "X00TD")
+        "X00T")
             FILES_TO_MOVE=( "arch/arm64/boot/Image.gz-dtb:${ANYKERNEL2_FOLDER}" )
             ;;
     esac
@@ -458,7 +458,7 @@ function move_kernel_files() {
             fi
             cp "${MOD}" "${MODULES_FOLDER}"
         done
-        if [[ ${DEVICE} = "X00TD" ]]; then
+        if [[ ${DEVICE} = "X00T" ]]; then
             mkdir -p "${VENDOR_MODULES_FOLDER}"
             mv "${MODULES_FOLDER}"/msm_11ad_proxy.ko "${VENDOR_MODULES_FOLDER}"/msm_11ad_proxy.ko
         fi
