@@ -379,8 +379,8 @@ function generate_version() {
     KERNEL_NAME="${CONFIG_LOCALVERSION/-/}${LOCALVERSION_ZIP}${VERSION_TEXT}${REVISION_FOR_FILE}${SHA}${DATE}"
 
     # Set final package names
-    UNSIGNED_ZIP=${KERNEL_NAME,,}-unsigned.zip
-    SIGNED_ZIP=${KERNEL_NAME,,}.zip
+    UNSIGNED_ZIP=${KERNEL_NAME}-unsigned.zip
+    SIGNED_ZIP=${KERNEL_NAME}.zip
 }
 
 # Print variables
