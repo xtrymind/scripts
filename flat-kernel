@@ -376,7 +376,7 @@ function generate_version() {
     fi
 
     # Export KERNEL_NAME based on the above information
-    KERNEL_NAME="${CONFIG_LOCALVERSION/-/}${LOCALVERSION_ZIP}${VERSION_TEXT}${REVISION_FOR_FILE}${SHA}${DATE}"
+    KERNEL_NAME="${CONFIG_LOCALVERSION/-/}-${ANDROID_VERSION}${VERSION_TEXT}${REVISION_FOR_FILE}${SHA}${DATE}${LOCALVERSION_ZIP}"
 
     # Set final package names
     UNSIGNED_ZIP=${KERNEL_NAME}-unsigned.zip
