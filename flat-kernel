@@ -572,7 +572,7 @@ function ending_info() {
                 SIZE=$(du -h "${FILE_LOCATION}" | awk '{print $1}')
             fi
 
-            echo "${GRN}FILE LOCATION: ${FILE_LOCATION}"
+            echo "${GRN}FILE NAME: ${SIGNED_ZIP}"
             echo "SIZE: ${SIZE}${RST}"
         fi
 
