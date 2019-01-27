@@ -9,7 +9,7 @@ TC_FOLDER=${HOME}/local/toolchains
 FOLDER_MAGISK=${HOME}/repo/magisk-files
 KERNEL_FOLDER=${HOME}/local/kernel
 BIN_FOLDER=${HOME}/bin
-LINUX_FOLDER=${HOME}/local/linux-kernel/linux
+LINUX_FOLDER=${HOME}/local/linux/kernel
 
 # Export
 export LINUX_FOLDER
