@@ -152,11 +152,11 @@ function device_flags() {
     case ${DEVICE} in
         "X00T")
             # Required flags
-            [[ -z ${ANDROID_VERSION} ]] && ANDROID_VERSION=9
+            [[ -z ${ANDROID_VERSION} ]] && ANDROID_VERSION=8.1.0
 
             BUILD_FUNCTION=build_kernel
 
-            [[ -z ${COMPILER} ]] && COMPILER=clang
+            [[ -z ${COMPILER} ]] && COMPILER=gcc
 
             [[ -z ${DEFCONFIG} ]] && DEFCONFIG="flat_defconfig"
 
@@ -174,8 +174,8 @@ function device_flags() {
                 fi
             fi
 
-            [[ -z ${GCC_FOLDER} ]] && GCC_FOLDER=${TC_FOLDER}/aarch64-linux-gnu-8.x
-            [[ -z ${GCC_32_BIT_FOLDER} ]] && GCC_32_BIT_FOLDER=${TC_FOLDER}/arm-linux-gnueabi-8.x
+            [[ -z ${GCC_FOLDER} ]] && GCC_FOLDER=${TC_FOLDER}/btg-gcc-7.4.1-arm64-linaro
+            #[[ -z ${GCC_32_BIT_FOLDER} ]] && GCC_32_BIT_FOLDER=${TC_FOLDER}/arm-linux-gnueabi-8.x
 
             MATCH_FLAG="${DEVICE_NAME_FILE}-v${VERSION::1}" ;;
 
@@ -196,7 +196,7 @@ function generate_variables() {
     OUT_FOLDER=${SOURCE_FOLDER}/out
 
     if [[ -z ${IMAGE_ONLY} ]]; then
-        ANYKERNEL2_FOLDER=${KERNEL_FOLDER}/anykernel2-${DEVICE_NAME_GITHUB}
+        ANYKERNEL2_FOLDER=${KERNEL_FOLDER}/AnyKernel2-${DEVICE_NAME_GITHUB}
         FILE_MOVE_HEAD=${HOME}/flatKernel
 
         case ${MODE} in
@@ -241,7 +241,7 @@ function generate_variables() {
 
     if [[ ${COMPILER} = "gcc" && ${DEVICE} = "X00T" ]]; then
         case "$(basename "${GCC_FOLDER}")" in
-             "btg-gcc-8.2.1-arm64"|"btg-gcc-7.3.1-arm64-linaro"|"btg-gcc-6.5.0-arm64-linaro")
+             "btg-gcc-8.2.1-arm64"|"btg-gcc-7.4.1-arm64-linaro"|"btg-gcc-6.5.0-arm64-linaro")
                  KCFLAGS="-floop-nest-optimize \
                           -fgraphite-identity \
                           -ftree-loop-distribution \
