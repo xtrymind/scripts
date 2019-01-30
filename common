@@ -275,3 +275,15 @@ function cvcbz() {
 function rmcolon() {
     for file in *.cbz; do mv "$file" "$(echo "$file" | sed 's/[^a-zA-Z0-9.[:space:]]//g')"; done
 }
+
+# create tar.lz4 from folder
+function mkatlz4(){
+    [[ ${#} -lt 1 ]] && { display_error "This function takes an argument!"; return; }
+    tar cvf - ${1///} | lz4 -9 - ${1///}.tar.lz4
+}
+
+# extract tar.lz4
+function untlz4(){
+    [[ ${#} -lt 1 ]] && { display_error "This function takes an argument!"; return; }
+    lz4 -d ${1}.tar.lz4 | tar -xv
+}
