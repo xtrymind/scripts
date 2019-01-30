@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 
+###############
+#  VARIABLES  #
+###############
+
 # Location of "scripts" folder
 SCRIPTS_FOLDER=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)
 
 # Directory
 LOS=${HOME}/local/lineage
 TC_FOLDER=${HOME}/local/toolchains
-FOLDER_MAGISK=${HOME}/repo/magisk-files
 KERNEL_FOLDER=${HOME}/local/kernel
 BIN_FOLDER=${HOME}/bin
 LINUX_FOLDER=${HOME}/local/linux/kernel
@@ -49,6 +52,10 @@ if [[ ! -d ${CCACHE_DIR} ]]; then
     ccache --set-config=compression_level=9
 fi
 
+###############
+#  FUNCTIONS  #
+###############
+
 # Sync repo
 function rps {
     repo sync -j4 --force-sync -c --no-clone-bundle --no-tags --optimized-fetch --prune "${@}" #|& rg --color=never --after-context=3 "git:" && echo
@@ -62,12 +69,11 @@ function envrom(){
 
 # Brunch with cmka for build lineage
 function bcmka(){
-	[[ ${#} -lt 1 ]] && { display_error "This function takes an argument!"; return; }
+    [[ ${#} -lt 1 ]] && { display_error "This function takes an argument!"; return; }
+    DEVICE=${1}
 
-	DEVICE=${1}
-
-	breakfast ${DEVICE}
-	cmka bacon
+    breakfast ${DEVICE}
+    cmka bacon
 }
 
 # Create config based on modprobed.db
@@ -114,7 +120,7 @@ function die() {
     if type -p pre_exit_commands; then
         pre_exit_commands
     fi
-    exit
+    exit 1
 }
 
 # Prints a warning in bold yellow
@@ -126,6 +132,7 @@ function warn() {
 
 # Formats the time
 function format_time() {
+    local TIME_STRING
     MINS=$(((${2} - ${1}) / 60))
     SECS=$(((${2} - ${1}) % 60))
     if [[ ${MINS} -ge 60 ]]; then
@@ -158,16 +165,6 @@ function format_time() {
     echo "${TIME_STRING}"
 }
 
-# Convert a file location to gitlab web link
-function web_link_gitlab() {
-    echo "${1}" | sed s/"$(echo "${FOLDER_MAGISK}" | sed 's/\//\\\//g')"/https:\\/\\/gitlab.com\\/xtrymind\\/magisk-files\\/raw\\/master/
-}
-
-# Convert a file location to github web link
-function web_link_github() {
-    echo "${1}" | sed s/"$(echo "${FOLDER_MAGISK}" | sed 's/\//\\\//g')"/https:\\/\\/raw.githubusercontent.com\\/xtrymind\\/magisk-files\\/master/
-}
-
 # Remove URLs from Clang version
 function clang_version() {
     [[ ${#} -lt 1 ]] && { display_error "This function takes an argument!"; return; }
@@ -186,26 +183,6 @@ function clang_version() {
         *) POS="1" ;;
     esac
     "${CLANG}" --version | head -n 1 | cut -d \( -f "${POS}" | sed 's/[[:space:]]*$//' || display_error "Something went wrong!"
-}
-
-# Common function for file management
-# make cbz file from all folder in current dirrectory
-function fmkacbz() {
-    for dir in */; do base=$(basename "$dir"); zip -r9 "${base}.cbz" "$dir"; done
-}
-
-function mkacbz() {
-    zip -r9 ../${PWD##*/}.cbz *
-}
-
-# convert zip file to cbz in current dirrectory
-function cvcbz() {
-    for file in *.zip; do mv "$file" "${file%.zip}.cbz"; done
-}
-
-# remove colon(":") from file name
-function rmcolon() {
-    for file in *.cbz; do mv "$file" "$(echo "$file" | sed 's/[^a-zA-Z0-9.[:space:]]//g')"; done
 }
 
 # ripgrep wrapper
@@ -277,4 +254,24 @@ function tg_upload() {
             -F document=@"${FILE}" \
             -F caption="${*}" \
             -X POST https://api.telegram.org/bot"${TOKEN}"/sendDocument 1>/dev/null
+}
+
+# make cbz file from all folder in current dirrectory
+function fmkacbz() {
+    for dir in */; do base=$(basename "$dir"); zip -r9 "${base}.cbz" "$dir"; done
+}
+
+# make cbz file from all file in current dirrectory
+function mkacbz() {
+    zip -r9 ../${PWD##*/}.cbz *
+}
+
+# convert zip file to cbz in current dirrectory
+function cvcbz() {
+    for file in *.zip; do mv "$file" "${file%.zip}.cbz"; done
+}
+
+# remove colon(":") from file name
+function rmcolon() {
+    for file in *.cbz; do mv "$file" "$(echo "$file" | sed 's/[^a-zA-Z0-9.[:space:]]//g')"; done
 }
