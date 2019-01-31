@@ -285,5 +285,5 @@ function mkatlz4(){
 # extract tar.lz4
 function untlz4(){
     [[ ${#} -lt 1 ]] && { display_error "This function takes an argument!"; return; }
-    lz4 -d ${1}.tar.lz4 | tar -xv
+    lz4 -d ${1} | tar -xv
 }
