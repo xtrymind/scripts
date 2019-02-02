@@ -63,7 +63,7 @@ function rps {
 
 # Set up android build environment
 function envrom(){
-    export PATH="/opt/python2:$PATH"
+    source venv/bin/activate
     export LC_ALL=C
 }
 
