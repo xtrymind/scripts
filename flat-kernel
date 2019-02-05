@@ -16,7 +16,7 @@
 # Gather parameters
 function parse_parameters() {
     EXTRA_MAKE_FLAGS=()
-    while [[ ${#} -ge 1 ]]; do
+    while (( ${#} )); do
         case ${1} in
             # Use AOSP clang
             "-ac"|"--aosp-clang")

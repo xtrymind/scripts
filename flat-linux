@@ -14,7 +14,7 @@
 
 # Gather parameters
 function parse_parameters() {
-    while [[ ${#} -ge 1 ]]; do
+    while (( ${#} )); do
         case ${1} in
             # build only
             "-io"|"--image-only")

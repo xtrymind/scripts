@@ -17,7 +17,7 @@ source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/c
 trap 'echo; die "Manually aborted!"' SIGINT SIGTERM
 
 # Gather parameters on extension
-while [[ ${#} -ge 1 ]]; do
+while (( ${#} )); do
     case ${1} in
         # Extension
         "-e"|"--extension")
