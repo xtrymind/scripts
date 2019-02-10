@@ -152,13 +152,13 @@ function device_flags() {
     case ${DEVICE} in
         "X00T")
             # Required flags
-            [[ -z ${ANDROID_VERSION} ]] && ANDROID_VERSION=8.1.0
+            [[ -z ${ANDROID_VERSION} ]] && ANDROID_VERSION=9
 
             BUILD_FUNCTION=build_kernel
 
-            [[ -z ${COMPILER} ]] && COMPILER=gcc
+            [[ -z ${COMPILER} ]] && COMPILER=clang
 
-            [[ -z ${DEFCONFIG} ]] && DEFCONFIG="flat_defconfig"
+            [[ -z ${DEFCONFIG} ]] && DEFCONFIG="X00T_defconfig"
 
             DEVICE_NAME_FILE=${DEVICE^}
             DEVICE_NAME_GITHUB=X00T
@@ -168,7 +168,7 @@ function device_flags() {
                 # SC2153: Possible misspelling: TC_FOLDER may not be assigned, but GCC_FOLDER is.
                 # shellcheck disable=SC2153
                 if [[ -n ${AOSP_CLANG} ]]; then
-                    CLANG_FOLDER=${TC_FOLDER}/linux-x86/clang-r346389c
+                    CLANG_FOLDER=${LOS}/prebuilts/clang/host/linux-x86/clang-r349610
                 else
                     CLANG_FOLDER=${TC_FOLDER}/clang-8.x
                 fi
@@ -355,7 +355,7 @@ function generate_version() {
     fi
 
     # If the mode isn't stable, add hash information to the file for debugging
-    [[ -n ${PERSONAL} ]] && NUM=12
+    [[ -n ${PERSONAL} ]] && NUM=8
     SHA="-g$(git rev-parse --verify --short=${NUM} HEAD)"
     LOCALVERSION="${LOCALVERSION}${SHA}"
 
