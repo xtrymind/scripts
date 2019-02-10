@@ -161,21 +161,20 @@ function device_flags() {
             [[ -z ${DEFCONFIG} ]] && DEFCONFIG="X00T_defconfig"
 
             DEVICE_NAME_FILE=${DEVICE^}
-            DEVICE_NAME_GITHUB=X00T
-            DEVICE_NAME_WEB=${DEVICE}
 
-            if [[ -z ${CLANG_FOLDER} ]]; then
+            [[ -z ${GCC_FOLDER} ]] && GCC_FOLDER=${TC_FOLDER}/btg-gcc-8.2.1-arm64-linaro
+            #[[ -z ${GCC_32_BIT_FOLDER} ]] && GCC_32_BIT_FOLDER=${TC_FOLDER}/arm-linux-gnueabi-8.x
+
+            if [[ ${COMPILER} = "clang" ]]; then
                 # SC2153: Possible misspelling: TC_FOLDER may not be assigned, but GCC_FOLDER is.
                 # shellcheck disable=SC2153
                 if [[ -n ${AOSP_CLANG} ]]; then
                     CLANG_FOLDER=${LOS}/prebuilts/clang/host/linux-x86/clang-r349610
+                    GCC_FOLDER=${LOS}/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9
                 else
                     CLANG_FOLDER=${TC_FOLDER}/clang-8.x
                 fi
             fi
-
-            [[ -z ${GCC_FOLDER} ]] && GCC_FOLDER=${TC_FOLDER}/btg-gcc-8.2.1-arm64-linaro
-            #[[ -z ${GCC_32_BIT_FOLDER} ]] && GCC_32_BIT_FOLDER=${TC_FOLDER}/arm-linux-gnueabi-8.x
 
             MATCH_FLAG="${DEVICE_NAME_FILE}-v${VERSION::1}" ;;
 
@@ -192,28 +191,12 @@ function get_cc_prefix() {
 # Set up other variables
 function generate_variables() {
     # Folders
-    SOURCE_FOLDER=${KERNEL_FOLDER}/${DEVICE_NAME_GITHUB}
+    SOURCE_FOLDER=${KERNEL_FOLDER}/${DEVICE_NAME_FILE}
     OUT_FOLDER=${SOURCE_FOLDER}/out
 
     if [[ -z ${IMAGE_ONLY} ]]; then
-        ANYKERNEL2_FOLDER=${KERNEL_FOLDER}/AnyKernel2-${DEVICE_NAME_GITHUB}
+        ANYKERNEL2_FOLDER=${KERNEL_FOLDER}/AnyKernel2-${DEVICE_NAME_FILE}
         FILE_MOVE_HEAD=${HOME}/flatKernel
-
-        case ${MODE} in
-            "beta"|"bisect"|"canary"|"rc"|"stable")
-                if [[ -z ${CANARY} ]]; then
-                    FILE_MOVE=${FILE_MOVE_HEAD}/kernels/${DEVICE_NAME_WEB}/${ANDROID_VERSION}/${MODE}
-                    FILE_MOVE_OLD=$(readlink -f "${FILE_MOVE}/../archive")
-                fi ;;
-            "tmp")
-                FILE_MOVE=${FILE_MOVE_HEAD}/tmp/${DEVICE_NAME_WEB}/${ANDROID_VERSION} ;;
-            "personal")
-                FILE_MOVE=${FILE_MOVE_HEAD}/${DEVICE_NAME_WEB} ;;
-            "zip")
-                unset FILE_MOVE ;;
-            *)
-                die "Invalid mode specified!" ;;
-        esac
     fi
 
     # Compilation variables
@@ -388,9 +371,6 @@ function generate_version() {
 function print_variables() {
     echo "${BOLD}Device:${RST}     ${DEVICE}\n"
 
-    LAST_COMMIT=$(git kf)
-    echo "${BOLD}Branch:${RST}     $(git describe --exact-match 2>/dev/null || git cb) @ ${LAST_COMMIT}\n"
-
     [[ ${COMPILER} = "clang" ]] && echo "${BOLD}Clang:${RST}      $(command -v clang)\n"
 
     echo "${BOLD}GCC:${RST}        $(command -v "${CROSS_COMPILE}"gcc)\n"
@@ -398,6 +378,9 @@ function print_variables() {
 
 # Build kernel image
 function build_kernel() {
+    # last commit
+    LAST_COMMIT=$(git kf)
+
     # Point to proper defconfig and generate version files
     kmake ${DEFCONFIG} prepare
 
@@ -500,31 +483,6 @@ function setup_folders() {
     # If FILE_MOVE doesn't exist, make it
     [[ ! -d ${FILE_MOVE} ]] && mkdir -p "${FILE_MOVE}"
     FILE_MOVE=$(readlink -f "${FILE_MOVE}")
-
-    # If it isn't a stable build, clean the folder
-    if [[ -z ${STABLE} ]]; then
-        rm -rf "${FILE_MOVE:?}"/*
-    else
-        # Clean old test builds
-        cd "${FILE_MOVE}/.." || die "Shift to zip folder failed!"
-        rm -rf {alpha,beta,rc,tmp}/*
-        git add .
-        if [[ -n $(git status --porcelain) ]]; then
-            gpg_available
-            git commit --gpg-sign ${HIDDEN_COMMANDS:+ "--quiet"} --signoff --message "${DEVICE_NAME_FILE}: Remove old test builds"
-            git push ${HIDDEN_COMMANDS:+ "--quiet"}
-        fi
-
-        # Move the old files to an archive folder
-        [[ ! -d ${FILE_MOVE_OLD} ]] && mkdir -p "${FILE_MOVE_OLD}"
-        rm -f "${FILE_MOVE}"/{.version,.changelog}
-        OLD_FILES="$(find "${FILE_MOVE}" -maxdepth 1 -type f -name "*${MATCH_FLAG,,}*" 2>/dev/null)"
-        if [[ -n ${OLD_FILES} ]]; then
-            for OLD_FILE in ${OLD_FILES}; do
-                mv ${VERBOSE_COMMANDS:+ "-v"} "${OLD_FILE}" "${FILE_MOVE_OLD}"
-            done
-        fi
-    fi
 }
 
 # Move files and generate md5 files
@@ -579,11 +537,8 @@ function ending_info() {
 
         {
             echo "\`\`\`"
-            echo "kernel build successfully in ${DURATION,,}"
+            echo "${DEVICE} build successfully in ${DURATION,,}"
             echo
-            echo "Device : ${DEVICE}"
-            echo "Android: ${ANDROID_VERSION}"
-            echo "Version: $(cat "${OUT_FOLDER}/include/config/kernel.release")"
             echo "Commit : ${LAST_COMMIT}"
             echo "\`\`\`"
         } > "${TG_MSG_FILE}"
@@ -646,6 +601,8 @@ header "COMPILING KERNEL"
 parse_parameters "${@}"
 device_flags
 generate_variables
+
+tg_msg "\`Build started for ${DEVICE}\`"
 
 # Clean up the source
 clean_up
