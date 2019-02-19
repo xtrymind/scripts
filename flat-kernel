@@ -196,7 +196,7 @@ function generate_variables() {
 
     if [[ -z ${IMAGE_ONLY} ]]; then
         ANYKERNEL2_FOLDER=${KERNEL_FOLDER}/AnyKernel2-${DEVICE_NAME_FILE}
-        FILE_MOVE_HEAD=${HOME}/flatKernel
+        FILE_MOVE=${HOME}/flatKernel/${DEVICE_NAME_FILE}
     fi
 
     # Compilation variables
