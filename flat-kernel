@@ -485,13 +485,12 @@ function setup_folders() {
     FILE_MOVE=$(readlink -f "${FILE_MOVE}")
 }
 
-# Move files and generate md5 files
+# Move files
 function move_flashable_files() {
     echo "  - Moving files"
     (
         cd "${FILE_MOVE}" || die "Shift to ending folder failed!"
         mv "${ANYKERNEL2_FOLDER}/${SIGNED_ZIP}" "${FILE_MOVE}"
-        md5sum "${SIGNED_ZIP}" > "${FILE_MOVE}/${SIGNED_ZIP}.md5"
     )
 }
 
