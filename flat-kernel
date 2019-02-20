@@ -602,8 +602,6 @@ parse_parameters "${@}"
 device_flags
 generate_variables
 
-tg_msg "\`Build started for ${DEVICE}\`"
-
 # Clean up the source
 clean_up
 
