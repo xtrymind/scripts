@@ -169,7 +169,7 @@ function device_flags() {
                 # SC2153: Possible misspelling: TC_FOLDER may not be assigned, but GCC_FOLDER is.
                 # shellcheck disable=SC2153
                 if [[ -n ${AOSP_CLANG} ]]; then
-                    CLANG_FOLDER=${LOS}/prebuilts/clang/host/linux-x86/clang-r349610
+                    CLANG_FOLDER=${TC_FOLDER}/linux-x86/clang-r349610b
                     GCC_FOLDER=${LOS}/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9
                     GCC_32_BIT_FOLDER=${LOS}/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9
                 else
@@ -343,11 +343,7 @@ function generate_version() {
     SHA="-g$(git rev-parse --verify --short=${NUM} HEAD)"
     LOCALVERSION="${LOCALVERSION}${SHA}"
 
-    # Don't add the hash to the zip name for personal builds, use the date instead
-    if [[ -n ${PERSONAL} ]]; then
-        unset SHA
-        DATE="-$(date +%Y%m%d-%H%M)"
-    fi
+    DATE="-$(date +%Y%m%d-%H%M)"
 
     # If there are uncommitted changes, mark as dirty
     git status -uno --porcelain | grep -qv '^.. scripts/package' && LOCALVERSION="${LOCALVERSION}-dirty"
@@ -361,7 +357,7 @@ function generate_version() {
     fi
 
     # Export KERNEL_NAME based on the above information
-    KERNEL_NAME="${CONFIG_LOCALVERSION/-/}-${ANDROID_VERSION}${VERSION_TEXT}${REVISION_FOR_FILE}${SHA}${DATE}${LOCALVERSION_ZIP}"
+    KERNEL_NAME="${CONFIG_LOCALVERSION/-/}-${ANDROID_VERSION}${VERSION_TEXT}${REVISION_FOR_FILE}${DATE}${LOCALVERSION_ZIP}${SHA}"
 
     # Set final package names
     UNSIGNED_ZIP=${KERNEL_NAME}-unsigned.zip
@@ -477,22 +473,14 @@ function package_zip() {
     fi
 }
 
-# Setup folders
-function setup_folders() {
-    echo "  - Setting up final folders"
-
+# Move files
+function move_files() {
     # If FILE_MOVE doesn't exist, make it
     [[ ! -d ${FILE_MOVE} ]] && mkdir -p "${FILE_MOVE}"
     FILE_MOVE=$(readlink -f "${FILE_MOVE}")
-}
 
-# Move files
-function move_flashable_files() {
-    echo "  - Moving files"
-    (
-        cd "${FILE_MOVE}" || die "Shift to ending folder failed!"
-        mv "${ANYKERNEL2_FOLDER}/${SIGNED_ZIP}" "${FILE_MOVE}"
-    )
+    cd "${FILE_MOVE}" || die "Shift to ending folder failed!"
+    mv "${ANYKERNEL2_FOLDER}/${SIGNED_ZIP}" "${FILE_MOVE}"
 }
 
 # After build tasks
@@ -500,9 +488,7 @@ function after_build_tasks() {
     if [[ -z ${IMAGE_ONLY} ]]; then
         package_zip
         if [[ -n ${FILE_MOVE} ]]; then
-            header "SHUFFLING FILES"
-            setup_folders
-            move_flashable_files
+            move_files
         fi
     fi
 }
