@@ -72,8 +72,9 @@ function bcmka(){
     [[ ${#} -lt 1 ]] && { display_error "This function takes an argument!"; return; }
     DEVICE=${1}
 
-    breakfast ${DEVICE}
-    cmka bacon
+    lunch lineage_${DEVICE}-userdebug
+    m installclean
+    m bacon
 }
 
 # Create config based on modprobed.db
