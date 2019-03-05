@@ -169,7 +169,7 @@ function device_flags() {
                 # SC2153: Possible misspelling: TC_FOLDER may not be assigned, but GCC_FOLDER is.
                 # shellcheck disable=SC2153
                 if [[ -n ${AOSP_CLANG} ]]; then
-                    CLANG_FOLDER=${TC_FOLDER}/linux-x86/clang-r349610b
+                    CLANG_FOLDER=${TC_FOLDER}/linux-x86/clang-r353983
                     GCC_FOLDER=${LOS}/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9
                     GCC_32_BIT_FOLDER=${LOS}/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9
                 else
