@@ -18,10 +18,6 @@ function parse_parameters() {
     EXTRA_MAKE_FLAGS=()
     while (( ${#} )); do
         case ${1} in
-            # Use AOSP clang
-            "-ac"|"--aosp-clang")
-                AOSP_CLANG=true ;;
-
             # Android version
             "-av"|"--android-version")
                 shift && enforce_value "${@}"
@@ -40,12 +36,6 @@ function parse_parameters() {
 
                 COMPILER=${1} ;;
 
-            # Clang toolchain to use for compiling
-            "-ct"|"--clang-toolchain")
-                shift && enforce_value "${@}"
-
-                CLANG_FOLDER=${1} ;;
-
             # Device to compile for
             "-d"|"--device")
                 shift && enforce_value "${@}"
@@ -57,18 +47,6 @@ function parse_parameters() {
                 shift && enforce_value "${@}"
 
                 EXTRA_MAKE_FLAGS+=( "${1}" ) ;;
-
-            # 64-bit GCC toolchain to use for compiling
-            "-gt"|"--gcc-toolchain")
-                shift && enforce_value "${@}"
-
-                GCC_FOLDER=${1} ;;
-
-            # 32-bit GCC toolchain to use for compiling
-            "-gt-32"|"--gcc-32-bit-toolchain")
-                shift && enforce_value "${@}"
-
-                GCC_32_BIT_FOLDER=${1} ;;
 
             # Do not package kernel image
             "-io"|"--image-only")
@@ -85,6 +63,10 @@ function parse_parameters() {
                 shift && enforce_value "${@}"
 
                 REVISION=${1} ;;
+
+            # Using aosp clang and gcc
+            "-s"|"--stock")
+                STOCK=true ;;
 
             # Upload zip to Telegram
             "-t"|"--telegram")
@@ -162,31 +144,11 @@ function device_flags() {
 
             DEVICE_NAME_FILE=${DEVICE^}
 
-            [[ -z ${GCC_FOLDER} ]] && GCC_FOLDER=${TC_FOLDER}/btg-gcc-8.2.1-arm64-linaro
-            #[[ -z ${GCC_32_BIT_FOLDER} ]] && GCC_32_BIT_FOLDER=${TC_FOLDER}/arm-linux-gnueabi-8.x
-
-            if [[ ${COMPILER} = "clang" ]]; then
-                # SC2153: Possible misspelling: TC_FOLDER may not be assigned, but GCC_FOLDER is.
-                # shellcheck disable=SC2153
-                if [[ -n ${AOSP_CLANG} ]]; then
-                    CLANG_FOLDER=${TC_FOLDER}/linux-x86/clang-r353983
-                    GCC_FOLDER=${LOS}/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9
-                    GCC_32_BIT_FOLDER=${LOS}/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9
-                else
-                    CLANG_FOLDER=${TC_FOLDER}/clang-8.x
-                fi
-            fi
-
             MATCH_FLAG="${DEVICE_NAME_FILE}-v${VERSION::1}" ;;
 
         *)
             die "Invalid device!" ;;
     esac
-}
-
-# Automatically get cross compile prefix from GCC
-function get_cc_prefix() {
-    find "${1}" \( -type f -o -type l \) -name '*-gcc' | sort | head -n1 | sed 's@.*/@@' | sed 's/gcc//'
 }
 
 # Set up other variables
@@ -203,67 +165,25 @@ function generate_variables() {
     # Compilation variables
     ARCHITECTURE=arm64
 
-    # Normal 64-bit GCC toolchain
-    if [[ ! -d ${GCC_FOLDER} ]]; then
-        GCC_FOLDER=${TC_FOLDER}/${GCC_FOLDER}
-        [[ ! -d ${GCC_FOLDER} ]] && die "Invalid GCC folder specified!"
-    fi
-    GCC_BIN=${GCC_FOLDER}/bin
-    CROSS_COMPILE=$(get_cc_prefix "${GCC_BIN}")
-    [[ -z ${CROSS_COMPILE} ]] && die "64-bit GCC toolchain could not be found!"
+    # Handle GCC
+    if [[ -n ${STOCK} ]]; then
+        GCC_FOLDER=${TC_FOLDER}/aarch64-linux-android-4.9/bin
+        CROSS_COMPILE=${GCC_FOLDER}/aarch64-linux-androidkernel-
 
-    # 32-bit GCC toolchain if required
-    if [[ -n ${GCC_32_BIT_FOLDER} ]]; then
-        if [[ ! -d ${GCC_32_BIT_FOLDER} ]]; then
-            GCC_32_BIT_FOLDER=${TC_FOLDER}/${GCC_32_BIT_FOLDER}
-            [[ ! -d ${GCC_32_BIT_FOLDER} ]] && die "Invalid GCC folder specified!"
-        fi
-        GCC_32_BIT_BIN=${GCC_32_BIT_FOLDER}/bin
-        CROSS_COMPILE_ARM32=$(get_cc_prefix "${GCC_32_BIT_BIN}")
-        [[ -z ${CROSS_COMPILE_ARM32} ]] && die "32-bit GCC toolchain could not be found!"
-    fi
-
-    if [[ ${COMPILER} = "gcc" && ${DEVICE} = "X00T" ]]; then
-        case "$(basename "${GCC_FOLDER}")" in
-             "btg-gcc-8.2.1-arm64-linaro"|"btg-gcc-7.4.1-arm64-linaro"|"btg-gcc-6.5.0-arm64-linaro")
-                 KCFLAGS="-floop-nest-optimize \
-                          -fgraphite-identity \
-                          -ftree-loop-distribution \
-                          -ffast-math \
-                          -funsafe-math-optimizations \
-                          -mcpu=cortex-a73.cortex-a53+crc+crypto \
-                          -mtune=cortex-a73.cortex-a53 \
-                          -O3" ;;
-        esac
-    fi
+        GCC_32_BIT_FOLDER=${TC_FOLDER}/arm-linux-androideabi-4.9/bin
+        CROSS_COMPILE_ARM32=${GCC_FOLDER}/arm-linux-androideabi-
+     fi
 
     # Handle Clang
     if [[ ${COMPILER} = "clang" ]]; then
-        if [[ ! -d ${CLANG_FOLDER} ]]; then
-            CLANG_FOLDER=${TC_FOLDER}/${CLANG_FOLDER}
-            [[ ! -d ${CLANG_FOLDER} ]] && die "Invalid Clang folder specified!"
+        if [[ -n ${STOCK} ]]; then
+            CLANG_FOLDER=${TC_FOLDER}/linux-x86/clang-r353983
         fi
+
         CLANG_BIN=${CLANG_FOLDER}/bin
         [[ ! -f ${CLANG_BIN}/clang ]] && die "Clang binary could not be found!"
 
         CLANG_VERSION=$(clang_version "${CLANG_BIN}")
-        case "$(basename "${CLANG_FOLDER}")" in
-            "clang-8.x")
-                KCFLAGS="-mllvm -polly \
-                         -mllvm -polly-run-dce \
-                         -mllvm -polly-run-inliner \
-                         -mllvm -polly-opt-fusion=max \
-                         -mllvm -polly-ast-use-context \
-                         -mllvm -polly-vectorizer=stripmine \
-                         -mllvm -polly-detect-keep-going \
-                         -march=armv8-a+crypto+crc \
-                         -mcpu=cortex-a53+crypto+crc"
-                ;;
-            "linux-x86")
-                KCFLAGS="-march=armv8-a+crypto+crc \
-                         -mcpu=cortex-a53+crypto+crc"
-                ;;
-        esac
     fi
 
     # Add folders to LD_LIBRARY_PATH and PATH
@@ -282,7 +202,7 @@ function clean_up() {
 
     # Clean kernel source folder
     cd "${SOURCE_FOLDER}" || die "Kernel source is missing!"
-    git clean -dfx --exclude=out/.version ${HIDDEN_COMMANDS:+ "-q"}
+    #git clean -dfx --exclude=out/.version ${HIDDEN_COMMANDS:+ "-q"}
 }
 
 # Make wrapper for make function for GCC
@@ -291,7 +211,6 @@ function make_wrapper_gcc() {
          ARCH=${ARCHITECTURE} \
          CROSS_COMPILE="${CCACHE} ${CROSS_COMPILE}" \
          CROSS_COMPILE_ARM32="${CCACHE} ${CROSS_COMPILE_ARM32}" \
-         KBUILD_BUILD_VERSION="${KBUILD_BUILD_VERSION}" \
          KCFLAGS="${KCFLAGS}" \
          LOCALVERSION="${LOCALVERSION}" \
          O="${OUT_FOLDER}" \
@@ -306,10 +225,8 @@ function make_wrapper_clang() {
          CLANG_TRIPLE=aarch64-linux-gnu- \
          CROSS_COMPILE="${CROSS_COMPILE}" \
          CROSS_COMPILE_ARM32="${CROSS_COMPILE_ARM32}" \
-         HOSTCC="${CCACHE} clang" \
-         HOSTLD=ld.lld \
+         HOSTCC=clang \
          KBUILD_COMPILER_STRING="${CLANG_VERSION}" \
-         KBUILD_BUILD_VERSION="${KBUILD_BUILD_VERSION}" \
          KCFLAGS="${KCFLAGS}" \
          LOCALVERSION="${LOCALVERSION}" \
          O="${OUT_FOLDER}" \
