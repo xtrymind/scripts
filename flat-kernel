@@ -202,7 +202,7 @@ function clean_up() {
 
     # Clean kernel source folder
     cd "${SOURCE_FOLDER}" || die "Kernel source is missing!"
-    #git clean -dfx --exclude=out/.version ${HIDDEN_COMMANDS:+ "-q"}
+    git clean -dfx ${HIDDEN_COMMANDS:+ "-q"}
 }
 
 # Make wrapper for make function for GCC
@@ -359,6 +359,7 @@ function move_kernel_files() {
         if [[ ${DEVICE} = "X00T" ]]; then
             mkdir -p "${VENDOR_MODULES_FOLDER}"
             mv "${MODULES_FOLDER}"/msm_11ad_proxy.ko "${VENDOR_MODULES_FOLDER}"/msm_11ad_proxy.ko
+            rm -rfd "${MODULES_FOLDER}"
         fi
     fi
 }
@@ -369,7 +370,7 @@ function package_zip() {
 
     echo "${BOLD}Signed zip name:${RST}   ${SIGNED_ZIP}\n"
     [[ -n ${MODULES_FOLDER} ]] && \
-        echo "${BOLD}Kernel modules:${RST}    $(find "${MODULES_FOLDER}" -type f | wc -l)\n"
+        echo "${BOLD}Kernel modules:${RST}    $(find "${ANYKERNEL2_FOLDER}/modules" -type f | wc -l)\n"
 
     cd "${ANYKERNEL2_FOLDER}" || die "AnyKernel2 folder shift failed!"
 
@@ -436,18 +437,16 @@ function ending_info() {
 
             echo "${GRN}FILE NAME: ${SIGNED_ZIP}"
             echo "SIZE: ${SIZE}${RST}"
-        fi
 
-        if [[ -z ${IMAGE_ONLY} ]]; then
-            {
-                echo "\`\`\`"
-                echo "${DEVICE} build successfully in ${DURATION,,}"
-                echo
-                echo "Commit : ${LAST_COMMIT}"
-                echo "\`\`\`"
-            } > "${TG_MSG_FILE}"
-            tg_msg "$(cat "${TG_MSG_FILE}")"
             if [[ -n ${TG} ]]; then
+                {
+                    echo "\`\`\`"
+                    echo "${DEVICE} build successfully in ${DURATION,,}"
+                    echo
+                    echo "Commit : ${LAST_COMMIT}"
+                    echo "\`\`\`"
+                } > "${TG_MSG_FILE}"
+                tg_msg "$(cat "${TG_MSG_FILE}")"
                 tg_upload "${FILE_MOVE}/${SIGNED_ZIP}"
             fi
         fi
