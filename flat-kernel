@@ -171,7 +171,7 @@ function generate_variables() {
         CROSS_COMPILE=${GCC_FOLDER}/aarch64-linux-androidkernel-
 
         GCC_32_BIT_FOLDER=${TC_FOLDER}/arm-linux-androideabi-4.9/bin
-        CROSS_COMPILE_ARM32=${GCC_FOLDER}/arm-linux-androideabi-
+        CROSS_COMPILE_ARM32=${GCC_32_BIT_FOLDER}/arm-linux-androideabi-
      fi
 
     # Handle Clang
