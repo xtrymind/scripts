@@ -177,7 +177,7 @@ function generate_variables() {
     # Handle Clang
     if [[ ${COMPILER} = "clang" ]]; then
         if [[ -n ${STOCK} ]]; then
-            CLANG_FOLDER=${TC_FOLDER}/linux-x86/clang-r353983b
+            CLANG_FOLDER=${TC_FOLDER}/linux-x86/clang-r353983c
         fi
 
         CLANG_BIN=${CLANG_FOLDER}/bin
