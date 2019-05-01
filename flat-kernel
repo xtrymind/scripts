@@ -24,6 +24,10 @@ function parse_parameters() {
 
                 ANDROID_VERSION=${1} ;;
 
+            # Enable Audit
+            "-au"|"--audit")
+                AUDIT=true ;;
+
             # Config to use for compiling
             "-c"|"--config")
                 shift && enforce_value "${@}"
@@ -306,6 +310,11 @@ function build_kernel() {
 
     if [[ -n ${PERSONAL} ]]; then
         ./scripts/config --file "${OUT_FOLDER}"/.config -d CONFIG_LOCALVERSION_AUTO
+        kmake olddefconfig
+    fi
+
+    if [[ -n ${AUDIT} ]]; then
+        ./scripts/config --file "${OUT_FOLDER}"/.config -e CONFIG_AUDIT
         kmake olddefconfig
     fi
 
