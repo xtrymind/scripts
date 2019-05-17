@@ -260,7 +260,7 @@ function fmkacbz() {
 
 # make cbz file from all file in current dirrectory
 function mkacbz() {
-    zip -r9 ../${PWD##*/}.cbz *
+    zip -r9 ../"${PWD##*/}".cbz *
 }
 
 # convert zip file to cbz in current dirrectory
