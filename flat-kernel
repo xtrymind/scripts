@@ -7,6 +7,10 @@
 #
 # Flat Kernel compilation script
 
+# Directory
+TC_FOLDER=${HOME}/local/toolchains
+KERNEL_FOLDER=${HOME}/local/kernel
+
 ###############
 #             #
 #  FUNCTIONS  #
@@ -15,7 +19,6 @@
 
 # Gather parameters
 function parse_parameters() {
-    EXTRA_MAKE_FLAGS=()
     while (( ${#} )); do
         case ${1} in
             # Android version
@@ -46,12 +49,6 @@ function parse_parameters() {
 
                 DEVICE=${1} ;;
 
-            # Extra make flags if necessary (like mismatch config)
-            "-f"|"--flags")
-                shift && enforce_value "${@}"
-
-                EXTRA_MAKE_FLAGS+=( "${1}" ) ;;
-
             # Do not package kernel image
             "-io"|"--image-only")
                 IMAGE_ONLY=true ;;
@@ -62,12 +59,6 @@ function parse_parameters() {
 
                 MODE=${1} ;;
 
-            # Test versioning (# in kernel version)
-            "-r"|"--revision")
-                shift && enforce_value "${@}"
-
-                REVISION=${1} ;;
-
             # Using aosp clang and gcc
             "-s"|"--stock")
                 STOCK=true ;;
@@ -75,24 +66,6 @@ function parse_parameters() {
             # Upload zip to Telegram
             "-t"|"--telegram")
                 TG=true ;;
-
-            # Version number
-            "-v"|"--version")
-                shift && enforce_value "${@}"
-
-                VERSION=${1} ;;
-
-            # How much script output to show
-            "-V"|"--verbosity-level")
-                shift && enforce_value "${@}"
-                VERBOSITY_LEVEL=${1}
-                case ${VERBOSITY_LEVEL} in
-                    "0") RG_LINES=0; HIDDEN_COMMANDS=true ;;
-                    "1") SHOW_OUTPUT=true; HIDDEN_COMMANDS=true ;;
-                    "2") SHOW_OUTPUT=true; VERBOSE_COMMANDS=true ;;
-                    "3") EXTRA_MAKE_FLAGS+=( "V=1" ); SHOW_OUTPUT=true; HIDDEN_COMMANDS=true ;;
-                    "4") EXTRA_MAKE_FLAGS+=( "V=1" ); SHOW_OUTPUT=true; VERBOSE_COMMANDS=true ;;
-                esac ;;
 
             # Disables -Werror config
             "-Wno-error")
@@ -146,9 +119,7 @@ function device_flags() {
 
             [[ -z ${DEFCONFIG} ]] && DEFCONFIG="X00T_defconfig"
 
-            DEVICE_NAME_FILE=${DEVICE^}
-
-            MATCH_FLAG="${DEVICE_NAME_FILE}-v${VERSION::1}" ;;
+            DEVICE_NAME_FILE=${DEVICE^} ;;
 
         *)
             die "Invalid device!" ;;
@@ -157,6 +128,11 @@ function device_flags() {
 
 # Set up other variables
 function generate_variables() {
+    # Ccache
+    if [[ -n $(command -v ccache) ]]; then
+        CCACHE="ccache"
+    fi
+
     # Folders
     SOURCE_FOLDER=${KERNEL_FOLDER}/${DEVICE_NAME_FILE}
     OUT_FOLDER=${SOURCE_FOLDER}/out
@@ -170,13 +146,11 @@ function generate_variables() {
     ARCHITECTURE=arm64
 
     # Handle GCC
-    if [[ -n ${STOCK} ]]; then
-        GCC_FOLDER=${TC_FOLDER}/aarch64-linux-android-4.9/bin
-        CROSS_COMPILE=${GCC_FOLDER}/aarch64-linux-androidkernel-
+    GCC_FOLDER=${TC_FOLDER}/aarch64-linux-gnu-8.x/bin
+    GCC_CC=${GCC_FOLDER}/aarch64-linux-gnu-
 
-        GCC_32_BIT_FOLDER=${TC_FOLDER}/arm-linux-androideabi-4.9/bin
-        CROSS_COMPILE_ARM32=${GCC_32_BIT_FOLDER}/arm-linux-androideabi-
-     fi
+    GCC_32_BIT_FOLDER=${TC_FOLDER}/arm-linux-gnueabi-8.x/bin
+    GCC_32_BIT_CC=${GCC_32_BIT_FOLDER}/arm-linux-gnueabi-
 
     # Handle Clang
     if [[ ${COMPILER} = "clang" ]]; then
@@ -209,41 +183,25 @@ function clean_up() {
     git clean -dfx ${HIDDEN_COMMANDS:+ "-q"}
 }
 
-# Make wrapper for make function for GCC
-function make_wrapper_gcc() {
-    make "${JOBS_FLAG}" \
-         ARCH=${ARCHITECTURE} \
-         CROSS_COMPILE="${CCACHE} ${CROSS_COMPILE}" \
-         CROSS_COMPILE_ARM32="${CCACHE} ${CROSS_COMPILE_ARM32}" \
-         KCFLAGS="${KCFLAGS}" \
-         LOCALVERSION="${LOCALVERSION}" \
-         O="${OUT_FOLDER}" \
-         "${@}"
-}
-
-# Make wrapper for make function for Clang
-function make_wrapper_clang() {
-    make "${JOBS_FLAG}" \
-         ARCH=${ARCHITECTURE} \
-         CC="${CCACHE} clang" \
-         CLANG_TRIPLE=aarch64-linux-gnu- \
-         CROSS_COMPILE="${CROSS_COMPILE}" \
-         CROSS_COMPILE_ARM32="${CROSS_COMPILE_ARM32}" \
-         HOSTCC=clang \
-         KBUILD_COMPILER_STRING="${CLANG_VERSION}" \
-         KCFLAGS="${KCFLAGS}" \
-         LOCALVERSION="${LOCALVERSION}" \
-         O="${OUT_FOLDER}" \
-         "${@}"
-}
-
-# Silence output function
+# Kernel make function
 function kmake() {
-    # Only show errors and warnings when compiling (unless debug)
-    if [[ -n ${SHOW_OUTPUT} ]]; then
-        make_wrapper_${COMPILER} "${@}"
+    # Set make variable
+    MAKE=( make "${JOBS_FLAG}" O=out ARCH=${ARCHITECTURE} )
+
+    if [[ ${COMPILER} = "clang" ]]; then
+        "${MAKE[@]}" CC="${CCACHE} clang" \
+                     CLANG_TRIPLE=aarch64-linux-gnu- \
+                     CLANG_TRIPLE_ARM32=arm-linux-gnueabi- \
+                     CROSS_COMPILE="${GCC_CC}" \
+                     CROSS_COMPILE_ARM32="${GCC_32_BIT_CC}" \
+                     HOSTCC="${CCACHE} clang" \
+                     KBUILD_COMPILER_STRING="${CLANG_VERSION}" \
+                     LOCALVERSION="${LOCALVERSION}" \
+                     "${@}"
     else
-        make_wrapper_${COMPILER} "${@}" |& rg --color=never --after-context=${RG_LINES:-10} "error:|warning:" && echo
+        "${MAKE[@]}" CROSS_COMPILE="${CCACHE} ${GCC_CC}" \
+                     CROSS_COMPILE_ARM32="${GCC_32_BIT_CC}" \
+                     "${@}"
     fi
 }
 
@@ -252,12 +210,6 @@ function generate_version() {
     # This is set in the defconfig
     CONFIG_LOCALVERSION="-fk"
     LOCALVERSION_ZIP="-${DEVICE_NAME_FILE}"
-
-    # Add version if present
-    if [[ -n ${VERSION} ]]; then
-        VERSION_TEXT="-v${VERSION}"
-        LOCALVERSION="${LOCALVERSION}${VERSION_TEXT}"
-    fi
 
     # If the mode isn't stable, add hash information to the file for debugging
     [[ -n ${PERSONAL} ]] && NUM=8
@@ -269,16 +221,8 @@ function generate_version() {
     # If there are uncommitted changes, mark as dirty
     git status -uno --porcelain | grep -qv '^.. scripts/package' && LOCALVERSION="${LOCALVERSION}-dirty"
 
-    # If REVISION exists, use it for the file
-    if [[ -n ${REVISION} ]]; then
-        REVISION_FOR_FILE=".${MODE::1}${REVISION}"
-
-        # If REVISION is greater than or equal to 1, pass it to the build system
-        [[ ${REVISION} -ge 1 ]] && KBUILD_BUILD_VERSION=${REVISION}
-    fi
-
     # Export KERNEL_NAME based on the above information
-    KERNEL_NAME="${CONFIG_LOCALVERSION/-/}-${ANDROID_VERSION}${VERSION_TEXT}${REVISION_FOR_FILE}${DATE}${LOCALVERSION_ZIP}${SHA}"
+    KERNEL_NAME="${CONFIG_LOCALVERSION/-/}-${ANDROID_VERSION}${DATE}${LOCALVERSION_ZIP}${SHA}"
 
     # Set final package names
     UNSIGNED_ZIP=${KERNEL_NAME}-unsigned.zip
@@ -300,7 +244,7 @@ function build_kernel() {
     LAST_COMMIT=$(git kf)
 
     # Point to proper defconfig and generate version files
-    kmake ${DEFCONFIG} prepare
+    kmake ${DEFCONFIG}
 
     # If requested, disable -Werror
     if [[ -n ${NO_WERROR} ]]; then
@@ -319,7 +263,7 @@ function build_kernel() {
     fi
 
     # Make the kernel
-    kmake ${EXTRA_MAKE_FLAGS:+ "${EXTRA_MAKE_FLAGS[@]}"}
+    kmake
 
     [[ -n ${CACHED_BRANCH} ]] && git ch ${HIDDEN_COMMANDS:+ "-q"} "${CACHED_BRANCH}"
 
@@ -356,7 +300,7 @@ function move_kernel_files() {
         VENDOR_MODULES_FOLDER=${ANYKERNEL2_FOLDER}/modules/vendor/lib/modules
         mkdir -p "${MODULES_FOLDER}"
         for MOD in ${MODULES}; do
-            "${CROSS_COMPILE}"strip --strip-unneeded "${MOD}"
+            "${GCC_CC}"strip --strip-unneeded "${MOD}"
             if [[ -f "${OUT_FOLDER}"/scripts/sign-file ]]; then
                 "${OUT_FOLDER}"/scripts/sign-file sha512 \
                                                   "${OUT_FOLDER}/certs/signing_key.pem" \
@@ -482,7 +426,6 @@ function ending_info() {
 
 source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/common"
 source "${SCRIPTS_FOLDER}/snippets/fkv"
-trap 'echo; die "Manually aborted!"' SIGINT SIGTERM
 
 # Start tracking time
 START=$(date +"%s")
@@ -522,7 +465,7 @@ clean_up
 generate_version
 
 # Print relevant variables
-print_variables
+#print_variables
 
 # Build kernel
 ${BUILD_FUNCTION}

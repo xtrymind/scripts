@@ -9,7 +9,6 @@ SCRIPTS_FOLDER=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return;
 
 # Directory
 LOS=${HOME}/local/lineage
-TC_FOLDER=${HOME}/local/toolchains
 KERNEL_FOLDER=${HOME}/local/kernel
 BIN_FOLDER=${HOME}/bin
 LINUX_FOLDER=${HOME}/local/linux/kernel
@@ -29,9 +28,6 @@ YLW="\033[01;33m"
 # Number of make threads
 THREADS=$(($(nproc --all) + 1))
 JOBS_FLAG="-j${THREADS}"
-
-# Common ccache variable
-CCACHE=$(command -v ccache)
 
 if [ -d "$HOME/bin" ] ; then
     PATH="$HOME/bin:$PATH"
