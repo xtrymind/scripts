@@ -117,7 +117,7 @@ function device_flags() {
 
             [[ -z ${COMPILER} ]] && COMPILER=clang
 
-            [[ -z ${DEFCONFIG} ]] && DEFCONFIG="X00T_defconfig"
+            [[ -z ${DEFCONFIG} ]] && DEFCONFIG="flat_defconfig"
 
             DEVICE_NAME_FILE=${DEVICE^} ;;
 
@@ -146,14 +146,19 @@ function generate_variables() {
     ARCHITECTURE=arm64
 
     # Handle GCC
-    GCC_FOLDER=${TC_FOLDER}/aarch64-linux-gnu-8.x/bin
-    GCC_CC=${GCC_FOLDER}/aarch64-linux-gnu-
+    GCC_FOLDER=${TC_FOLDER}/aarch64-elf-gcc/bin
+    GCC_CC=${GCC_FOLDER}/aarch64-elf-
 
-    GCC_32_BIT_FOLDER=${TC_FOLDER}/arm-linux-gnueabi-8.x/bin
-    GCC_32_BIT_CC=${GCC_32_BIT_FOLDER}/arm-linux-gnueabi-
+    GCC_32_BIT_FOLDER=${TC_FOLDER}/arm-eabi-gcc/bin
+    GCC_32_BIT_CC=${GCC_32_BIT_FOLDER}/arm-eabi-
 
     # Handle Clang
     if [[ ${COMPILER} = "clang" ]]; then
+        GCC_FOLDER=${TC_FOLDER}/aarch64-linux-gnu-8.x/bin
+        GCC_CC=${GCC_FOLDER}/aarch64-linux-gnu-
+        GCC_32_BIT_FOLDER=${TC_FOLDER}/arm-linux-gnueabi-8.x/bin
+        GCC_32_BIT_CC=${GCC_32_BIT_FOLDER}/arm-linux-gnueabi-
+
         if [[ -n ${STOCK} ]]; then
             CLANG_FOLDER=${TC_FOLDER}/linux-x86/clang-r353983c
         fi
@@ -165,8 +170,10 @@ function generate_variables() {
     fi
 
     # Add folders to LD_LIBRARY_PATH and PATH
-    LD_LIBRARY_PATH=$(find "${CLANG_FOLDER}" -maxdepth 1 -name 'lib' -o -name 'lib64' -type d)${LD_LIBRARY_PATH:+":${LD_LIBRARY_PATH}"}
-    PATH=${CLANG_BIN:+"${CLANG_BIN}:"}${GCC_BIN}:${GCC_32_BIT_BIN:+"${GCC_32_BIT_BIN}:"}:${BIN_FOLDER}:${PATH}
+    if [[ ${COMPILER} = "clang" ]]; then
+        LD_LIBRARY_PATH=$(find "${CLANG_FOLDER}" -maxdepth 1 -name 'lib' -o -name 'lib64' -type d)${LD_LIBRARY_PATH:+":${LD_LIBRARY_PATH}"}
+    fi
+    PATH=${CLANG_BIN:+"${CLANG_BIN}:"}${GCC_FOLDER}:${GCC_32_BIT_FOLDER:+"${GCC_32_BIT_FOLDER}:"}:${BIN_FOLDER}:${PATH}
     export LD_LIBRARY_PATH PATH
 }
 
@@ -201,6 +208,7 @@ function kmake() {
     else
         "${MAKE[@]}" CROSS_COMPILE="${CCACHE} ${GCC_CC}" \
                      CROSS_COMPILE_ARM32="${GCC_32_BIT_CC}" \
+                     LOCALVERSION="${LOCALVERSION}" \
                      "${@}"
     fi
 }
