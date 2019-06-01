@@ -115,7 +115,7 @@ function device_flags() {
 
             BUILD_FUNCTION=build_kernel
 
-            [[ -z ${COMPILER} ]] && COMPILER=clang
+            [[ -z ${COMPILER} ]] && COMPILER=gcc
 
             [[ -z ${DEFCONFIG} ]] && DEFCONFIG="flat_defconfig"
 
