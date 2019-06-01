@@ -138,7 +138,7 @@ function generate_variables() {
     OUT_FOLDER=${SOURCE_FOLDER}/out
 
     if [[ -z ${IMAGE_ONLY} ]]; then
-        ANYKERNEL2_FOLDER=${KERNEL_FOLDER}/AnyKernel2-${DEVICE_NAME_FILE}
+        ANYKERNEL3_FOLDER=${KERNEL_FOLDER}/AnyKernel3-${DEVICE_NAME_FILE}
         FILE_MOVE=${HOME}/flatKernel/${DEVICE_NAME_FILE}
     fi
 
@@ -179,9 +179,9 @@ function generate_variables() {
 
 # Clean up
 function clean_up() {
-    # Clean AnyKernel2 folder if building a zip
-    if [[ -n ${ANYKERNEL2_FOLDER} ]]; then
-        cd "${ANYKERNEL2_FOLDER}" || die "AnyKernel2 source is missing!"
+    # Clean AnyKernel3 folder if building a zip
+    if [[ -n ${ANYKERNEL3_FOLDER} ]]; then
+        cd "${ANYKERNEL3_FOLDER}" || die "AnyKernel3 source is missing!"
         git clean -fxd ${HIDDEN_COMMANDS:+ "-q"}
     fi
 
@@ -277,7 +277,7 @@ function build_kernel() {
 
     case ${DEVICE} in
         "X00T")
-            FILES_TO_MOVE=( "arch/arm64/boot/Image.gz-dtb:${ANYKERNEL2_FOLDER}" )
+            FILES_TO_MOVE=( "arch/arm64/boot/Image.gz-dtb:${ANYKERNEL3_FOLDER}" )
             ;;
     esac
 
@@ -299,13 +299,13 @@ function move_kernel_files() {
         mkdir -p "${FTM#*:}"
         cp "${OUT_FOLDER}/${FTM%:*}" "${FTM#*:}"
     done
-    echo "Version: $(cat "${OUT_FOLDER}/include/config/kernel.release")" > "${ANYKERNEL2_FOLDER}/version"
+    echo "Version: $(cat "${OUT_FOLDER}/include/config/kernel.release")" > "${ANYKERNEL3_FOLDER}/version"
 
     # Grab modules too if they are present
     MODULES="$(find "${OUT_FOLDER}" -name '*.ko')"
     if [[ -n ${MODULES} ]]; then
-        MODULES_FOLDER=${ANYKERNEL2_FOLDER}/modules/system/lib/modules
-        VENDOR_MODULES_FOLDER=${ANYKERNEL2_FOLDER}/modules/vendor/lib/modules
+        MODULES_FOLDER=${ANYKERNEL3_FOLDER}/modules/system/lib/modules
+        VENDOR_MODULES_FOLDER=${ANYKERNEL3_FOLDER}/modules/vendor/lib/modules
         mkdir -p "${MODULES_FOLDER}"
         for MOD in ${MODULES}; do
             "${GCC_CC}"strip --strip-unneeded "${MOD}"
@@ -331,9 +331,9 @@ function package_zip() {
 
     echo "${BOLD}Signed zip name:${RST}   ${SIGNED_ZIP}\n"
     [[ -n ${MODULES_FOLDER} ]] && \
-        echo "${BOLD}Kernel modules:${RST}    $(find "${ANYKERNEL2_FOLDER}/modules" -type f | wc -l)\n"
+        echo "${BOLD}Kernel modules:${RST}    $(find "${ANYKERNEL3_FOLDER}/modules" -type f | wc -l)\n"
 
-    cd "${ANYKERNEL2_FOLDER}" || die "AnyKernel2 folder shift failed!"
+    cd "${ANYKERNEL3_FOLDER}" || die "AnyKernel3 folder shift failed!"
 
     # Package the zip without the README
     zip ${HIDDEN_COMMANDS:+ "-q"} -r9 "${UNSIGNED_ZIP}" -x README.md -- *
@@ -359,7 +359,7 @@ function move_files() {
     FILE_MOVE=$(readlink -f "${FILE_MOVE}")
 
     cd "${FILE_MOVE}" || die "Shift to ending folder failed!"
-    mv "${ANYKERNEL2_FOLDER}/${SIGNED_ZIP}" "${FILE_MOVE}"
+    mv "${ANYKERNEL3_FOLDER}/${SIGNED_ZIP}" "${FILE_MOVE}"
 }
 
 # After build tasks
@@ -392,7 +392,7 @@ function ending_info() {
                 FILE_LOCATION="${FILE_MOVE}"
                 SIZE=$(du -h "${FILE_MOVE}/${SIGNED_ZIP}" | awk '{print $1}')
             else
-                FILE_LOCATION=${ANYKERNEL2_FOLDER}/${SIGNED_ZIP}
+                FILE_LOCATION=${ANYKERNEL3_FOLDER}/${SIGNED_ZIP}
                 SIZE=$(du -h "${FILE_LOCATION}" | awk '{print $1}')
             fi
 
