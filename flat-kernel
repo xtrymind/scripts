@@ -159,9 +159,7 @@ function generate_variables() {
         GCC_32_BIT_FOLDER=${TC_FOLDER}/arm-linux-gnueabi-8.x/bin
         GCC_32_BIT_CC=${GCC_32_BIT_FOLDER}/arm-linux-gnueabi-
 
-        if [[ -n ${STOCK} ]]; then
-            CLANG_FOLDER=${TC_FOLDER}/linux-x86/clang-r353983c
-        fi
+        CLANG_FOLDER=${TC_FOLDER}/clang
 
         CLANG_BIN=${CLANG_FOLDER}/bin
         [[ ! -f ${CLANG_BIN}/clang ]] && die "Clang binary could not be found!"
@@ -169,12 +167,15 @@ function generate_variables() {
         CLANG_VERSION=$(clang_version "${CLANG_BIN}")
     fi
 
-    # Add folders to LD_LIBRARY_PATH and PATH
     if [[ ${COMPILER} = "clang" ]]; then
+        # LD_LIBRARY_PATH is needed for LTO
         LD_LIBRARY_PATH=$(find "${CLANG_FOLDER}" -maxdepth 1 -name 'lib' -o -name 'lib64' -type d)${LD_LIBRARY_PATH:+":${LD_LIBRARY_PATH}"}
+        export LD_LIBRARY_PATH
     fi
-    PATH=${CLANG_BIN:+"${CLANG_BIN}:"}${GCC_FOLDER}:${GCC_32_BIT_FOLDER:+"${GCC_32_BIT_FOLDER}:"}:${BIN_FOLDER}:${PATH}
-    export LD_LIBRARY_PATH PATH
+
+    #PATH=${CLANG_BIN:+"${CLANG_BIN}:"}${GCC_FOLDER}:${GCC_32_BIT_FOLDER:+"${GCC_32_BIT_FOLDER}:"}:${BIN_FOLDER}:${PATH}
+    PATH=${CLANG_BIN:+"${CLANG_BIN}:"}${GCC_FOLDER}:${GCC_32_BIT_FOLDER:+"${GCC_32_BIT_FOLDER}:"}:${PATH}
+    export PATH
 }
 
 # Clean up
@@ -201,7 +202,6 @@ function kmake() {
                      CLANG_TRIPLE_ARM32=arm-linux-gnueabi- \
                      CROSS_COMPILE="${GCC_CC}" \
                      CROSS_COMPILE_ARM32="${GCC_32_BIT_CC}" \
-                     HOSTCC="${CCACHE} clang" \
                      KBUILD_COMPILER_STRING="${CLANG_VERSION}" \
                      LOCALVERSION="${LOCALVERSION}" \
                      "${@}"
@@ -229,8 +229,14 @@ function generate_version() {
     # If there are uncommitted changes, mark as dirty
     git status -uno --porcelain | grep -qv '^.. scripts/package' && LOCALVERSION="${LOCALVERSION}-dirty"
 
+    if [[ ${COMPILER} = "clang" ]]; then
+        COMP="_clang"
+    else
+        COMP="_gcc"
+    fi
+
     # Export KERNEL_NAME based on the above information
-    KERNEL_NAME="${CONFIG_LOCALVERSION/-/}-${ANDROID_VERSION}${DATE}${LOCALVERSION_ZIP}${SHA}"
+    KERNEL_NAME="${CONFIG_LOCALVERSION/-/}-${ANDROID_VERSION}${DATE}${LOCALVERSION_ZIP}${SHA}${COMP}"
 
     # Set final package names
     UNSIGNED_ZIP=${KERNEL_NAME}-unsigned.zip
@@ -284,10 +290,10 @@ function build_kernel() {
     # Move them if they exist, error out if not
     KIMG=${FILES_TO_MOVE[0]%:*}
     if [[ -f "${OUT_FOLDER}/${KIMG}" ]]; then
-        echo "${GRN}$(basename "${KIMG}") compiled successfully!${RST}\n"
+        echo "${GRN}$(basename "${KIMG}") compiled successfully!${RST}"
         [[ -z ${IMAGE_ONLY} ]] && move_kernel_files
     else
-        echo "${RED}Kernel image not found!${RST}\n"
+        echo "${RED}Kernel image not found!${RST}"
         ending_info
     fi
 }
@@ -327,9 +333,6 @@ function move_kernel_files() {
 
 # Package zip
 function package_zip() {
-    header "PACKAGING AND SIGNING ZIP"
-
-    echo "${BOLD}Signed zip name:${RST}   ${SIGNED_ZIP}\n"
     [[ -n ${MODULES_FOLDER} ]] && \
         echo "${BOLD}Kernel modules:${RST}    $(find "${ANYKERNEL3_FOLDER}/modules" -type f | wc -l)\n"
 
@@ -345,10 +348,7 @@ function package_zip() {
 
     # If packaging failed, error out
     if [[ ! -f ${SIGNED_ZIP} ]]; then
-        echo "${RED}Kernel zip not found after signing!${RST}\n"
         ending_info
-    else
-        echo "${GRN}Kernel zip successfully generated!${RST}\n"
     fi
 }
 
@@ -380,13 +380,6 @@ function ending_info() {
     DURATION=$(format_time "${START}" "${END}")
 
     if [[ "${*}" =~ "-s" ]]; then
-        {
-            echo "DURATION:   ${DURATION,,}"
-            case ${ANDROID_VERSION} in
-                "8.1.0") formatted_kernel_version oreo -p ;;
-                "9") formatted_kernel_version pie -p ;;
-            esac
-        }
         if [[ -z ${IMAGE_ONLY} ]]; then
             if [[ -n ${FILE_MOVE} ]]; then
                 FILE_LOCATION="${FILE_MOVE}"
@@ -397,7 +390,7 @@ function ending_info() {
             fi
 
             echo "${GRN}FILE NAME: ${SIGNED_ZIP}"
-            echo "SIZE: ${SIZE}${RST}"
+            echo "SIZE: ${SIZE}${RST}\n"
 
             if [[ -n ${TG} ]]; then
                 {
@@ -411,13 +404,6 @@ function ending_info() {
                 tg_upload "${FILE_MOVE}/${SIGNED_ZIP}"
             fi
         fi
-
-        EXIT_CODE=0
-    else
-        echo "DURATION:   ${DURATION,,}"
-        load_botinfo
-        tg_msg "\`Build failed in ${DURATION,,}\`"
-        EXIT_CODE=1
     fi
 
     echo "${GRN}DURATION: ${DURATION}${RST}"
