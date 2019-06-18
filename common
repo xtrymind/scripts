@@ -284,3 +284,7 @@ function untlz4(){
     [[ ${#} -lt 1 ]] && { display_error "This function takes an argument!"; return; }
     lz4 -d ${1} | tar -xv
 }
+
+function impclang() {
+    export PATH=/home/xtrymind/local/toolchains/clang/bin:${PATH}
+}
