@@ -288,3 +288,24 @@ function untlz4(){
 function impclang() {
     export PATH=/home/xtrymind/local/toolchains/clang/bin:${PATH}
 }
+
+# build ota-packages for X00T
+function bldota() {
+    breakfast X00T
+    mka target-files-package otatools
+}
+
+# sign build with keys
+function signbuild() {
+    ./build/tools/releasetools/sign_target_files_apks -o -d ${HOME}/.android-certs \
+    $OUT/obj/PACKAGING/target_files_intermediates/*-target_files-*.zip \
+    signed-target_files.zip
+}
+
+# sign zip with keys
+function signota() {
+    ./build/tools/releasetools/ota_from_target_files -k ${HOME}/.android-certs/releasekey \
+    --block --backup=true \
+    signed-target_files.zip \
+    lineage-16.0-"$(date +%Y%m%d)"-X00T-signed.zip
+}
