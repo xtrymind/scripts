@@ -289,6 +289,12 @@ function impclang() {
     export PATH=/home/xtrymind/local/toolchains/clang/bin:${PATH}
 }
 
+# for dirty build
+function mcln() {
+    breakfast X00T
+    m installclean
+}
+
 # build ota-packages for X00T
 function bldota() {
     breakfast X00T
