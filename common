@@ -44,8 +44,6 @@ export PATH="/usr/lib/ccache/bin/:$PATH"
 export CCACHE_DIR=${HOME}/local/.ccache
 if [[ ! -d ${CCACHE_DIR} ]]; then
     ccache -M 40G &> /dev/null
-    ccache --set-config=compression=true
-    ccache --set-config=compression_level=9
 fi
 
 ###############
