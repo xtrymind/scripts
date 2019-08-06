@@ -117,7 +117,7 @@ function device_flags() {
 
             [[ -z ${COMPILER} ]] && COMPILER=gcc
 
-            [[ -z ${DEFCONFIG} ]] && DEFCONFIG="flat_defconfig"
+            [[ -z ${DEFCONFIG} ]] && DEFCONFIG="X00T_defconfig"
 
             DEVICE_NAME_FILE=${DEVICE^} ;;
 
@@ -128,9 +128,21 @@ function device_flags() {
 
 # Set up other variables
 function generate_variables() {
+    # default makeflags
+    MAKEFLAGS=(
+        ${JOBS_FLAG}
+        ARCH=arm64
+        O=out
+    )
+
     # Ccache
     if [[ -n $(command -v ccache) ]]; then
-        CCACHE="ccache"
+        if [[ ${COMPILER} = "clang" ]]; then
+            CC+="ccache "
+        else
+            CROSS_COMPILE+="ccache "
+            CROSS_COMPILE_ARM32+="ccache "
+        fi
     fi
 
     # Folders
@@ -142,40 +154,45 @@ function generate_variables() {
         FILE_MOVE=${HOME}/flatKernel/${DEVICE_NAME_FILE}
     fi
 
-    # Compilation variables
-    ARCHITECTURE=arm64
-
-    # Handle GCC
-    GCC_FOLDER=${TC_FOLDER}/aarch64-elf-gcc/bin
-    GCC_CC=${GCC_FOLDER}/aarch64-elf-
-
-    GCC_32_BIT_FOLDER=${TC_FOLDER}/arm-eabi-gcc/bin
-    GCC_32_BIT_CC=${GCC_32_BIT_FOLDER}/arm-eabi-
-
     # Handle Clang
     if [[ ${COMPILER} = "clang" ]]; then
-        GCC_FOLDER=${TC_FOLDER}/aarch64-linux-gnu-8.x/bin
-        GCC_CC=${GCC_FOLDER}/aarch64-linux-gnu-
-        GCC_32_BIT_FOLDER=${TC_FOLDER}/arm-linux-gnueabi-8.x/bin
-        GCC_32_BIT_CC=${GCC_32_BIT_FOLDER}/arm-linux-gnueabi-
-
         CLANG_FOLDER=${TC_FOLDER}/clang
+        GCC_FOLDER=${TC_FOLDER}/aarch64-linux-android-4.9/bin
+        GCC_CC=${GCC_FOLDER}/aarch64-linux-android-
+        GCC_32_BIT_FOLDER=${TC_FOLDER}/arm-linux-androideabi-4.9/bin
+        GCC_32_BIT_CC=${GCC_32_BIT_FOLDER}/arm-linux-androideabi-
+        CC+=clang
 
         CLANG_BIN=${CLANG_FOLDER}/bin
         [[ ! -f ${CLANG_BIN}/clang ]] && die "Clang binary could not be found!"
 
         CLANG_VERSION=$(clang_version "${CLANG_BIN}")
-    fi
-
-    if [[ ${COMPILER} = "clang" ]]; then
+        MAKEFLAGS+=(
+            "CC=${CC}"
+            "CLANG_TRIPLE=aarch64-linux-gnu"
+            "CLANG_TRIPLE_ARM32=arm-linux-gnueabi"
+            "KBUILD_COMPILER_STRING=${CLANG_VERSION}"
+        )
         # LD_LIBRARY_PATH is needed for LTO
-        LD_LIBRARY_PATH=$(find "${CLANG_FOLDER}" -maxdepth 1 -name 'lib' -o -name 'lib64' -type d)${LD_LIBRARY_PATH:+":${LD_LIBRARY_PATH}"}
-        export LD_LIBRARY_PATH
+        export LD_LIBRARY_PATH=${CLANG_FOLDER}/lib:$LD_LIBRARY_PATH
+        export PATH=${CLANG_BIN}:$PATH
+    else
+        # Handle GCC
+        GCC_FOLDER=${TC_FOLDER}/aarch64-elf-gcc/bin
+        GCC_CC=${GCC_FOLDER}/aarch64-elf-
+
+        GCC_32_BIT_FOLDER=${TC_FOLDER}/arm-eabi-gcc/bin
+        GCC_32_BIT_CC=${GCC_32_BIT_FOLDER}/arm-eabi-
     fi
 
-    #PATH=${CLANG_BIN:+"${CLANG_BIN}:"}${GCC_FOLDER}:${GCC_32_BIT_FOLDER:+"${GCC_32_BIT_FOLDER}:"}:${BIN_FOLDER}:${PATH}
-    PATH=${CLANG_BIN:+"${CLANG_BIN}:"}${GCC_FOLDER}:${GCC_32_BIT_FOLDER:+"${GCC_32_BIT_FOLDER}:"}:${PATH}
-    export PATH
+    export PATH=${GCC_FOLDER}:${GCC_32_BIT_FOLDER}:$PATH
+
+    # common makeflags
+    MAKEFLAGS+=(
+        CROSS_COMPILE="${GCC_CC}"
+        CROSS_COMPILE_ARM32="${GCC_32_BIT_CC}"
+        LOCALVERSION="${LOCALVERSION}"
+    )
 }
 
 # Clean up
@@ -185,32 +202,12 @@ function clean_up() {
         cd "${ANYKERNEL3_FOLDER}" || die "AnyKernel3 source is missing!"
         git clean -fxd ${HIDDEN_COMMANDS:+ "-q"}
     fi
-
-    # Clean kernel source folder
     cd "${SOURCE_FOLDER}" || die "Kernel source is missing!"
-    git clean -dfx ${HIDDEN_COMMANDS:+ "-q"}
 }
 
 # Kernel make function
 function kmake() {
-    # Set make variable
-    MAKE=( make "${JOBS_FLAG}" O=out ARCH=${ARCHITECTURE} )
-
-    if [[ ${COMPILER} = "clang" ]]; then
-        "${MAKE[@]}" CC="${CCACHE} clang" \
-                     CLANG_TRIPLE=aarch64-linux-gnu- \
-                     CLANG_TRIPLE_ARM32=arm-linux-gnueabi- \
-                     CROSS_COMPILE="${GCC_CC}" \
-                     CROSS_COMPILE_ARM32="${GCC_32_BIT_CC}" \
-                     KBUILD_COMPILER_STRING="${CLANG_VERSION}" \
-                     LOCALVERSION="${LOCALVERSION}" \
-                     "${@}"
-    else
-        "${MAKE[@]}" CROSS_COMPILE="${CCACHE} ${GCC_CC}" \
-                     CROSS_COMPILE_ARM32="${GCC_32_BIT_CC}" \
-                     LOCALVERSION="${LOCALVERSION}" \
-                     "${@}"
-    fi
+    make "${MAKEFLAGS[@]}" "$@"
 }
 
 # Setup compilation
@@ -243,22 +240,16 @@ function generate_version() {
     SIGNED_ZIP=${KERNEL_NAME}.zip
 }
 
-# Print variables
-function print_variables() {
-    echo "${BOLD}Device:${RST}     ${DEVICE}\n"
-
-    [[ ${COMPILER} = "clang" ]] && echo "${BOLD}Clang:${RST}      $(command -v clang)\n"
-
-    echo "${BOLD}GCC:${RST}        $(command -v "${CROSS_COMPILE}"gcc)\n"
-}
-
 # Build kernel image
 function build_kernel() {
     # last commit
     LAST_COMMIT=$(git kf)
 
+    # clean build
+    make ARCH=arm64 O=out clean
+
     # Point to proper defconfig and generate version files
-    kmake ${DEFCONFIG}
+    make ARCH=arm64 O=out "${DEFCONFIG}"
 
     # If requested, disable -Werror
     if [[ -n ${NO_WERROR} ]]; then
@@ -271,15 +262,8 @@ function build_kernel() {
         kmake olddefconfig
     fi
 
-    if [[ -n ${AUDIT} ]]; then
-        ./scripts/config --file "${OUT_FOLDER}"/.config -e CONFIG_AUDIT
-        kmake olddefconfig
-    fi
-
     # Make the kernel
     kmake
-
-    [[ -n ${CACHED_BRANCH} ]] && git ch ${HIDDEN_COMMANDS:+ "-q"} "${CACHED_BRANCH}"
 
     case ${DEVICE} in
         "X00T")
@@ -457,9 +441,6 @@ clean_up
 
 # Generate variables such as versions
 generate_version
-
-# Print relevant variables
-#print_variables
 
 # Build kernel
 ${BUILD_FUNCTION}
