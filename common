@@ -39,7 +39,7 @@ if [ -d "${HOME}/repo/comvert" ] ; then
 fi
 
 # Use ccache
-export USE_CCACHE=true;
+export USE_CCACHE=1
 export PATH="/usr/lib/ccache/bin/:$PATH"
 export CCACHE_DIR=${HOME}/local/.ccache
 if [[ ! -d ${CCACHE_DIR} ]]; then
