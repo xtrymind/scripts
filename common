@@ -309,9 +309,9 @@ function signbuild() {
 # sign zip with keys
 function signota() {
     ./build/tools/releasetools/ota_from_target_files -k ${HOME}/.android-certs/releasekey \
-    --block --backup=true \
+    --block \
     signed-target_files.zip \
-    lineage-16.0-"$(date +%Y%m%d)"-X00T-signed.zip
+    lineage-17.0-"$(date +%Y%m%d)"-X00T-signed.zip
 }
 
 function bllvm() {
