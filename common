@@ -42,9 +42,6 @@ fi
 export USE_CCACHE=1
 export PATH="/usr/lib/ccache/bin/:$PATH"
 export CCACHE_DIR=${HOME}/local/.ccache
-if [[ ! -d ${CCACHE_DIR} ]]; then
-    ccache -M 40G &> /dev/null
-fi
 
 ###############
 #  FUNCTIONS  #
@@ -316,4 +313,16 @@ function signota() {
 
 function bllvm() {
 ./build-llvm.py -I /home/xtrymind/local/toolchains/clang/ -t "AArch64;ARM;X86" -m native --lto thin
+}
+
+# Setup ccache
+function ccache_setup() {
+    if [[ -n $(command -v ccache) ]]; then
+        ccache -M 40G &> /dev/null
+        ccache --set-config=compression=true
+        ccache --set-config=compression_level=9
+        export USE_CCACHE=1
+    else
+        display_error "Please install ccache!"
+    fi
 }
