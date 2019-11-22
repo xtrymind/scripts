@@ -286,13 +286,11 @@ function impclang() {
 
 # for dirty build
 function mcln() {
-    breakfast X00T
     m installclean
 }
 
 # build ota-packages for X00T
 function bldota() {
-    breakfast X00T
     mka target-files-package otatools
 }
 
