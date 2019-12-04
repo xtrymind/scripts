@@ -7,42 +7,11 @@
 #
 # Flat Kernel compilation script
 
-# Directory
-TC_FOLDER=${HOME}/local/toolchains
-KERNEL_FOLDER=${HOME}/local/kernel
+source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/common"
 
-###############
-#             #
-#  FUNCTIONS  #
-#             #
-###############
-
-# Gather parameters
-function parse_parameters() {
+parse_parameters() {
     while (( ${#} )); do
         case ${1} in
-            # Android version
-            "-av"|"--android-version")
-                shift && enforce_value "${@}"
-
-                ANDROID_VERSION=${1} ;;
-
-            # Enable Audit
-            "-au"|"--audit")
-                AUDIT=true ;;
-
-            # Config to use for compiling
-            "-c"|"--config")
-                shift && enforce_value "${@}"
-
-                DEFCONFIG=${1} ;;
-
-            # Compiler to use
-            "-cc"|"--compiler")
-                shift && enforce_value "${@}"
-
-                COMPILER=${1} ;;
-
             # Device to compile for
             "-d"|"--device")
                 shift && enforce_value "${@}"
@@ -50,403 +19,129 @@ function parse_parameters() {
                 DEVICE=${1} ;;
 
             # Do not package kernel image
-            "-io"|"--image-only")
-                IMAGE_ONLY=true ;;
+            -b | --build-only)
+                BUILD_ONLY=true ;;
 
-            # Where to move zip after compilation
-            "-m"|"--mode")
+            # Compiler to use
+            "-cc"|"--compiler")
                 shift && enforce_value "${@}"
 
-                MODE=${1} ;;
-
-            # Using aosp clang and gcc
-            "-s"|"--stock")
-                STOCK=true ;;
-
-            # Upload zip to Telegram
-            "-t"|"--telegram")
-                TG=true ;;
-
-            # Disables -Werror config
-            "-Wno-error")
-                NO_WERROR=true ;;
-
+                COMPILER=${1} ;;
             "") ;;
 
             *)
                 die "Invalid parameter" ;;
         esac
-
         shift
     done
 
     # Default parameters
-    [[ -z ${MODE} ]] && MODE="personal"
-    [[ -z ${VERBOSITY_LEVEL} ]] && HIDDEN_COMMANDS=true
-
-    [[ ${MODE} = "personal" ]] && { PERSONAL=true; }
-
     [[ -z ${DEVICE} ]] && DEVICE="X00T"
-    TG_MSG_FILE=$(mktemp)
+    #[[ ${DEVICE} = "X00T"} ]] && DEFCONFIG="X00T_defconfig"
+
+    [[ -z ${COMPILER} ]] && COMPILER=clang
 
 }
 
-# 'cp -v' alias
-function cp() {
-    command cp ${VERBOSE_COMMANDS:+ "-v"} "${@}"
-}
+parse_parameters "$@"
 
-# 'mv -v' alias
-function mv() {
-    command mv ${VERBOSE_COMMANDS:+ "-v"} "${@}"
-}
+TC_FOLDER=${HOME}/local/toolchains
+KERNEL_FOLDER=${HOME}/local/kernel
 
-# 'rm -v' alias
-function rm() {
-    command rm ${VERBOSE_COMMANDS:+ "-v"} "${@}"
-}
+AK3=${KERNEL_FOLDER}/AnyKernel3-${DEVICE}
+FILE_MOVE=${HOME}/flatKernel/${DEVICE}
 
-# Device "board" flags
-function device_flags() {
-    case ${DEVICE} in
-        "X00T")
-            # Required flags
-            [[ -z ${ANDROID_VERSION} ]] && ANDROID_VERSION=9
+# default makeflags
+MAKEFLAGS=(
+    ${JOBS_FLAG}
+    ARCH=arm64
+    O=out
+)
 
-            BUILD_FUNCTION=build_kernel
-
-            [[ -z ${COMPILER} ]] && COMPILER=gcc
-
-            [[ -z ${DEFCONFIG} ]] && DEFCONFIG="X00T_defconfig"
-
-            DEVICE_NAME_FILE=${DEVICE^} ;;
-
-        *)
-            die "Invalid device!" ;;
-    esac
-}
-
-# Set up other variables
-function generate_variables() {
-    # default makeflags
-    MAKEFLAGS=(
-        ${JOBS_FLAG}
-        ARCH=arm64
-        O=out
-    )
-
-    # Ccache
-    if [[ -n $(command -v ccache) ]]; then
-        if [[ ${COMPILER} = "clang" ]]; then
-            CC+="ccache "
-        else
-            CROSS_COMPILE+="ccache "
-            CROSS_COMPILE_ARM32+="ccache "
-        fi
-    fi
-
-    # Folders
-    SOURCE_FOLDER=${KERNEL_FOLDER}/${DEVICE_NAME_FILE}
-    OUT_FOLDER=${SOURCE_FOLDER}/out
-
-    if [[ -z ${IMAGE_ONLY} ]]; then
-        ANYKERNEL3_FOLDER=${KERNEL_FOLDER}/AnyKernel3-${DEVICE_NAME_FILE}
-        FILE_MOVE=${HOME}/flatKernel/${DEVICE_NAME_FILE}
-    fi
-
-    # Handle Clang
+# Ccache
+if [[ -n $(command -v ccache) ]]; then
     if [[ ${COMPILER} = "clang" ]]; then
-        CLANG_FOLDER=${TC_FOLDER}/clang
-        GCC_FOLDER=${TC_FOLDER}/aarch64-linux-android-4.9/bin
-        GCC_CC=${GCC_FOLDER}/aarch64-linux-android-
-        GCC_32_BIT_FOLDER=${TC_FOLDER}/arm-linux-androideabi-4.9/bin
-        GCC_32_BIT_CC=${GCC_32_BIT_FOLDER}/arm-linux-androideabi-
-        CC+=clang
-
-        CLANG_BIN=${CLANG_FOLDER}/bin
-        [[ ! -f ${CLANG_BIN}/clang ]] && die "Clang binary could not be found!"
-
-        CLANG_VERSION=$(clang_version "${CLANG_BIN}")
-        MAKEFLAGS+=(
-            "CC=${CC}"
-            "CLANG_TRIPLE=aarch64-linux-gnu"
-            "CLANG_TRIPLE_ARM32=arm-linux-gnueabi"
-            "KBUILD_COMPILER_STRING=${CLANG_VERSION}"
-        )
-        # LD_LIBRARY_PATH is needed for LTO
-        export LD_LIBRARY_PATH=${CLANG_FOLDER}/lib:$LD_LIBRARY_PATH
-        export PATH=${CLANG_BIN}:$PATH
+        CC+="ccache "
     else
-        # Handle GCC
-        GCC_FOLDER=${TC_FOLDER}/aarch64-elf-gcc/bin
-        GCC_CC=${GCC_FOLDER}/aarch64-elf-
-
-        GCC_32_BIT_FOLDER=${TC_FOLDER}/arm-eabi-gcc/bin
-        GCC_32_BIT_CC=${GCC_32_BIT_FOLDER}/arm-eabi-
+        CROSS_COMPILE+="ccache "
+        CROSS_COMPILE_ARM32+="ccache "
     fi
+fi
 
-    export PATH=${GCC_FOLDER}:${GCC_32_BIT_FOLDER}:$PATH
+# Handle Clang
+if [[ ${COMPILER} = "clang" ]]; then
+    CLANG_FOLDER=${TC_FOLDER}/clang
+    #GCC_FOLDER=${TC_FOLDER}/aarch64-linux-android-4.9/bin
+    GCC_FOLDER=${TC_FOLDER}/aarch64-linux-gnu-8.x/bin
+    GCC_CC=${GCC_FOLDER}/aarch64-linux-gnu-
+    #GCC_32_BIT_FOLDER=${TC_FOLDER}/arm-linux-androideabi-4.9/bin
+    GCC_32_BIT_FOLDER=${TC_FOLDER}/arm-linux-gnueabi-8.x//bin
+    GCC_32_BIT_CC=${GCC_32_BIT_FOLDER}/arm-linux-gnueabi-
+    CC+=clang
 
-    # common makeflags
+    CLANG_BIN=${CLANG_FOLDER}/bin
+    [[ ! -f ${CLANG_BIN}/clang ]] && die "Clang binary could not be found!"
+
+    CLANG_VERSION=$(clang_version "${CLANG_BIN}")
     MAKEFLAGS+=(
-        CROSS_COMPILE="${GCC_CC}"
-        CROSS_COMPILE_ARM32="${GCC_32_BIT_CC}"
-        LOCALVERSION="${LOCALVERSION}"
+        "CC=${CC}"
+        "CLANG_TRIPLE=aarch64-linux-gnu"
+        "CLANG_TRIPLE_ARM32=arm-linux-gnueabi"
+        "KBUILD_COMPILER_STRING=${CLANG_VERSION}"
     )
-}
+    # LD_LIBRARY_PATH is needed for LTO
+    export LD_LIBRARY_PATH=${CLANG_FOLDER}/lib:$LD_LIBRARY_PATH
+    export PATH=${CLANG_BIN}:$PATH
+else
+    # Handle GCC
+    GCC_FOLDER=${TC_FOLDER}/aarch64-linux-android-4.9/bin
+    GCC_CC=aarch64-linux-android-
+    GCC_32_BIT_FOLDER=${TC_FOLDER}/arm-linux-androideabi-4.9/bin
+    GCC_32_BIT_CC=arm-linux-androideabi-
+fi
 
-# Clean up
-function clean_up() {
-    # Clean AnyKernel3 folder if building a zip
-    if [[ -n ${ANYKERNEL3_FOLDER} ]]; then
-        cd "${ANYKERNEL3_FOLDER}" || die "AnyKernel3 source is missing!"
-        git clean -fxd ${HIDDEN_COMMANDS:+ "-q"}
-    fi
-    cd "${SOURCE_FOLDER}" || die "Kernel source is missing!"
-}
+export PATH=${GCC_FOLDER}:${GCC_32_BIT_FOLDER}:$PATH
+CROSS_COMPILE+="${GCC_CC}"
+CROSS_COMPILE_ARM32+="${GCC_32_BIT_CC}"
 
-# Kernel make function
-function kmake() {
-    make "${MAKEFLAGS[@]}" "$@"
-}
 
-# Setup compilation
-function generate_version() {
-    # This is set in the defconfig
-    CONFIG_LOCALVERSION="-fk"
-    LOCALVERSION_ZIP="-${DEVICE_NAME_FILE}"
+# common makeflags
+MAKEFLAGS+=(
+    CROSS_COMPILE=${CROSS_COMPILE}
+    CROSS_COMPILE_ARM32=${CROSS_COMPILE_ARM32}
+    LOCALVERSION="${LOCALVERSION}"
+)
 
-    # If the mode isn't stable, add hash information to the file for debugging
-    [[ -n ${PERSONAL} ]] && NUM=8
-    SHA="-g$(git rev-parse --verify --short=${NUM} HEAD)"
-    LOCALVERSION="${LOCALVERSION}${SHA}"
+# clean build
+make ARCH=arm64 O=out clean
 
-    DATE="-$(date +%Y%m%d-%H%M)"
+# Point to proper defconfig and generate version files
+make ARCH=arm64 O=out X00T_defconfig
 
-    # If there are uncommitted changes, mark as dirty
-    git status -uno --porcelain | grep -qv '^.. scripts/package' && LOCALVERSION="${LOCALVERSION}-dirty"
+make "${MAKEFLAGS[@]}"
 
-    if [[ ${COMPILER} = "clang" ]]; then
-        COMP="_clang"
-    else
-        COMP="_gcc"
-    fi
+if [[ -z $BUILD_ONLY ]]; then
+    # Clean everything except zip files
+    git -C "$AK3" clean -qdfx -e '*.zip'
+    # Kernel image task(s)
+    # Copy compressed kernel with appended DTB image
+    cp -f out/arch/arm64/boot/Image.gz-dtb "$AK3"
 
-    # Export KERNEL_NAME based on the above information
-    KERNEL_NAME="${CONFIG_LOCALVERSION/-/}-${ANDROID_VERSION}${DATE}${LOCALVERSION_ZIP}${SHA}${COMP}"
+    # Export here to be picked later
+    KERNEL_NAME=fk-$DEVICE-$(date +%Y%m%d-%H%M)
 
     # Set final package names
     UNSIGNED_ZIP=${KERNEL_NAME}-unsigned.zip
     SIGNED_ZIP=${KERNEL_NAME}.zip
-}
 
-# Build kernel image
-function build_kernel() {
-    # last commit
-    LAST_COMMIT=$(git kf)
-
-    # clean build
-    make ARCH=arm64 O=out clean
-
-    # Point to proper defconfig and generate version files
-    make ARCH=arm64 O=out "${DEFCONFIG}"
-
-    # If requested, disable -Werror
-    if [[ -n ${NO_WERROR} ]]; then
-        ./scripts/config --file "${OUT_FOLDER}"/.config -d CONFIG_CC_WERROR
-        kmake olddefconfig
-    fi
-
-    if [[ -n ${PERSONAL} ]]; then
-        ./scripts/config --file "${OUT_FOLDER}"/.config -d CONFIG_LOCALVERSION_AUTO
-        kmake olddefconfig
-    fi
-
-    # Make the kernel
-    kmake
-
-    case ${DEVICE} in
-        "X00T")
-            FILES_TO_MOVE=( "arch/arm64/boot/Image.gz-dtb:${ANYKERNEL3_FOLDER}" )
-            ;;
-    esac
-
-    # Move them if they exist, error out if not
-    KIMG=${FILES_TO_MOVE[0]%:*}
-    if [[ -f "${OUT_FOLDER}/${KIMG}" ]]; then
-        echo "${GRN}$(basename "${KIMG}") compiled successfully!${RST}"
-        [[ -z ${IMAGE_ONLY} ]] && move_kernel_files
-    else
-        echo "${RED}Kernel image not found!${RST}"
-        ending_info
-    fi
-}
-
-# Move kernel files after compilation
-function move_kernel_files() {
-    # Move the kernel image
-    for FTM in "${FILES_TO_MOVE[@]}"; do
-        mkdir -p "${FTM#*:}"
-        cp "${OUT_FOLDER}/${FTM%:*}" "${FTM#*:}"
-    done
-    echo "Version: $(cat "${OUT_FOLDER}/include/config/kernel.release")" > "${ANYKERNEL3_FOLDER}/version"
-
-    # Grab modules too if they are present
-    MODULES="$(find "${OUT_FOLDER}" -name '*.ko')"
-    if [[ -n ${MODULES} ]]; then
-        MODULES_FOLDER=${ANYKERNEL3_FOLDER}/modules/system/lib/modules
-        VENDOR_MODULES_FOLDER=${ANYKERNEL3_FOLDER}/modules/vendor/lib/modules
-        mkdir -p "${MODULES_FOLDER}"
-        for MOD in ${MODULES}; do
-            "${GCC_CC}"strip --strip-unneeded "${MOD}"
-            if [[ -f "${OUT_FOLDER}"/scripts/sign-file ]]; then
-                "${OUT_FOLDER}"/scripts/sign-file sha512 \
-                                                  "${OUT_FOLDER}/certs/signing_key.pem" \
-                                                  "${OUT_FOLDER}/certs/signing_key.x509" \
-                                                  "${MOD}"
-            fi
-            cp "${MOD}" "${MODULES_FOLDER}"
-        done
-        if [[ ${DEVICE} = "X00T" ]]; then
-            mkdir -p "${VENDOR_MODULES_FOLDER}"
-            mv "${MODULES_FOLDER}"/msm_11ad_proxy.ko "${VENDOR_MODULES_FOLDER}"/msm_11ad_proxy.ko
-            rm -rfd "${MODULES_FOLDER}"
-        fi
-    fi
-}
-
-# Package zip
-function package_zip() {
-    [[ -n ${MODULES_FOLDER} ]] && \
-        echo "${BOLD}Kernel modules:${RST}    $(find "${ANYKERNEL3_FOLDER}/modules" -type f | wc -l)\n"
-
-    cd "${ANYKERNEL3_FOLDER}" || die "AnyKernel3 folder shift failed!"
-
-    # Package the zip without the README
-    zip ${HIDDEN_COMMANDS:+ "-q"} -r9 "${UNSIGNED_ZIP}" -x README.md -- *
+    cd "$AK3"
+    zip -r9 "${UNSIGNED_ZIP}" -x README.md -- *
 
     # Sign zip
     java -jar "${BIN_FOLDER}/zipsigner-3.0.jar" \
               "${UNSIGNED_ZIP}" \
               "${SIGNED_ZIP}"
 
-    # If packaging failed, error out
-    if [[ ! -f ${SIGNED_ZIP} ]]; then
-        ending_info
-    fi
-}
-
-# Move files
-function move_files() {
-    # If FILE_MOVE doesn't exist, make it
-    [[ ! -d ${FILE_MOVE} ]] && mkdir -p "${FILE_MOVE}"
-    FILE_MOVE=$(readlink -f "${FILE_MOVE}")
-
-    cd "${FILE_MOVE}" || die "Shift to ending folder failed!"
-    mv "${ANYKERNEL3_FOLDER}/${SIGNED_ZIP}" "${FILE_MOVE}"
-}
-
-# After build tasks
-function after_build_tasks() {
-    if [[ -z ${IMAGE_ONLY} ]]; then
-        package_zip
-        if [[ -n ${FILE_MOVE} ]]; then
-            move_files
-        fi
-    fi
-}
-
-# Print file info
-function ending_info() {
-    header "SCRIPT FINISHED!"
-
-    END=$(date +"%s")
-    DURATION=$(format_time "${START}" "${END}")
-
-    if [[ "${*}" =~ "-s" ]]; then
-        if [[ -z ${IMAGE_ONLY} ]]; then
-            if [[ -n ${FILE_MOVE} ]]; then
-                FILE_LOCATION="${FILE_MOVE}"
-                SIZE=$(du -h "${FILE_MOVE}/${SIGNED_ZIP}" | awk '{print $1}')
-            else
-                FILE_LOCATION=${ANYKERNEL3_FOLDER}/${SIGNED_ZIP}
-                SIZE=$(du -h "${FILE_LOCATION}" | awk '{print $1}')
-            fi
-
-            echo "${GRN}FILE NAME: ${SIGNED_ZIP}"
-            echo "SIZE: ${SIZE}${RST}\n"
-
-            if [[ -n ${TG} ]]; then
-                {
-                    echo "\`\`\`"
-                    echo "${DEVICE} build successfully in ${DURATION,,}"
-                    echo
-                    echo "Commit : ${LAST_COMMIT}"
-                    echo "\`\`\`"
-                } > "${TG_MSG_FILE}"
-                tg_msg "$(cat "${TG_MSG_FILE}")"
-                tg_upload "${FILE_MOVE}/${SIGNED_ZIP}"
-            fi
-        fi
-    fi
-
-    echo "${GRN}DURATION: ${DURATION}${RST}"
-    echo
-    echo "\a"
-    exit ${EXIT_CODE}
-}
-
-################
-#              #
-# SCRIPT START #
-#              #
-################
-
-source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/common"
-source "${SCRIPTS_FOLDER}/snippets/fkv"
-
-# Start tracking time
-START=$(date +"%s")
-
-clear
-echo "${RED}"
-echo
-echo "================================================================================================"
-echo
-echo
-echo "                   ________    ___  ______   __ __ __________  _   __________                   "
-echo "                  / ____/ /   /   |/_  __/  / //_// ____/ __ \/ | / / ____/ /                   "
-echo "                 / /_  / /   / /| | / /    / ,<  / __/ / /_/ /  |/ / __/ / /                    "
-echo "                / __/ / /___/ ___ |/ /    / /| |/ /___/ _, _/ /|  / /___/ /___                  "
-echo "               /_/   /_____/_/  |_/_/    /_/ |_/_____/_/ |_/_/ |_/_____/_____/                  "
-echo
-echo
-echo
-echo "================================================================================================"
-echo
-
-#################
-# MAKING KERNEL #
-#################
-
-header "COMPILING KERNEL"
-
-# Parse command line parameters and setup options
-parse_parameters "${@}"
-device_flags
-generate_variables
-
-# Clean up the source
-clean_up
-
-# Generate variables such as versions
-generate_version
-
-# Build kernel
-${BUILD_FUNCTION}
-
-# After build tasks
-after_build_tasks
-
-# Print file info and time
-ending_info -s
+    rm -f "$UNSIGNED_ZIP"
+    mv "$AK3/$SIGNED_ZIP" ${HOME}/flatKernel/X00T/
+fi
