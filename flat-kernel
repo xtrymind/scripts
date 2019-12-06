@@ -124,8 +124,12 @@ if [[ -z $BUILD_ONLY ]]; then
     # Clean everything except zip files
     git -C "$AK3" clean -qdfx -e '*.zip'
     # Kernel image task(s)
-    # Copy compressed kernel with appended DTB image
-    cp -f out/arch/arm64/boot/Image.gz-dtb "$AK3"
+    # Copy compressed kernel image
+    cp -f out/arch/arm64/boot/Image.gz "$AK3"
+
+    # Copy dtbs
+    mkdir "$AK3"/dtbs
+    cp -f out/arch/arm64/boot/dts/qcom/*.dtb "$AK3"/dtbs
 
     # Export here to be picked later
     KERNEL_NAME=fk-$DEVICE-$(date +%Y%m%d-%H%M)
