@@ -71,12 +71,10 @@ fi
 # Handle Clang
 if [[ ${COMPILER} = "clang" ]]; then
     CLANG_FOLDER=${TC_FOLDER}/clang
-    #GCC_FOLDER=${TC_FOLDER}/aarch64-linux-android-4.9/bin
-    GCC_FOLDER=${TC_FOLDER}/aarch64-linux-gnu-8.x/bin
-    GCC_CC=${GCC_FOLDER}/aarch64-linux-gnu-
-    #GCC_32_BIT_FOLDER=${TC_FOLDER}/arm-linux-androideabi-4.9/bin
-    GCC_32_BIT_FOLDER=${TC_FOLDER}/arm-linux-gnueabi-8.x//bin
-    GCC_32_BIT_CC=${GCC_32_BIT_FOLDER}/arm-linux-gnueabi-
+    GCC_FOLDER=${TC_FOLDER}/aarch64-linux-android-4.9/bin
+    GCC_CC=aarch64-linux-android-
+    GCC_32_BIT_FOLDER=${TC_FOLDER}/arm-linux-androideabi-4.9/bin
+    GCC_32_BIT_CC=arm-linux-androideabi-
     CC+=clang
 
     CLANG_BIN=${CLANG_FOLDER}/bin
