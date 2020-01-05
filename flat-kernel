@@ -22,6 +22,10 @@ parse_parameters() {
             -b | --build-only)
                 BUILD_ONLY=true ;;
 
+            # Do not clean out directory
+            -c | --clean)
+                CLEAN=true ;;
+
             # Compiler to use
             "-cc"|"--compiler")
                 shift && enforce_value "${@}"
@@ -110,8 +114,10 @@ MAKEFLAGS+=(
     LOCALVERSION="${LOCALVERSION}"
 )
 
+if [[ -z $CLEAN ]]; then
 # clean build
 make ARCH=arm64 O=out clean
+fi
 
 # Point to proper defconfig and generate version files
 make ARCH=arm64 O=out X00T_defconfig
