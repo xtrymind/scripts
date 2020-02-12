@@ -40,8 +40,7 @@ parse_parameters() {
     done
 
     # Default parameters
-    [[ -z ${DEVICE} ]] && DEVICE="X00T"
-    #[[ ${DEVICE} = "X00T"} ]] && DEFCONFIG="X00T_defconfig"
+    [[ -z ${DEVICE} ]] && DEVICE="ginkgo"
 
     [[ -z ${COMPILER} ]] && COMPILER=clang
 
@@ -120,7 +119,7 @@ make ARCH=arm64 O=out clean
 fi
 
 # Point to proper defconfig and generate version files
-make ARCH=arm64 O=out X00T_defconfig
+make ARCH=arm64 O=out ${DEVICE}_defconfig
 
 make "${MAKEFLAGS[@]}"
 
@@ -147,5 +146,5 @@ if [[ -z $BUILD_ONLY ]]; then
               "${SIGNED_ZIP}"
 
     rm -f "$UNSIGNED_ZIP"
-    mv "$AK3/$SIGNED_ZIP" ${HOME}/flatKernel/X00T/
+    mv "$AK3/$SIGNED_ZIP" ${HOME}/flatKernel/${DEVICE}
 fi
