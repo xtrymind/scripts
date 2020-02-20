@@ -89,6 +89,11 @@ if [[ ${COMPILER} = "clang" ]]; then
         "CLANG_TRIPLE=aarch64-linux-gnu"
         "CLANG_TRIPLE_ARM32=arm-linux-gnueabi"
         "KBUILD_COMPILER_STRING=${CLANG_VERSION}"
+        "AR=llvm-ar"
+        "NM=llvm-nm"
+        "OBJCOPY=llvm-objcopy"
+        "OBJDUMP=llvm-objdump"
+        "STRIP=llvm-strip"
     )
     # LD_LIBRARY_PATH is needed for LTO
     export LD_LIBRARY_PATH=${CLANG_FOLDER}/lib:$LD_LIBRARY_PATH
