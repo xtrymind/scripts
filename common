@@ -311,7 +311,12 @@ function signota() {
 }
 
 function bllvm() {
-./build-llvm.py -I /home/xtrymind/local/toolchains/clang/ -t "AArch64;ARM;X86" -m native --lto thin
+./build-llvm.py \
+    --install-folder /home/xtrymind/local/toolchains/clang/ \
+    --clang-vendor "flat" \
+    --targets "ARM;AArch64;X86" \
+    --shallow-clone \
+    --lto thin
 }
 
 # Setup ccache
