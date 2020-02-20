@@ -319,6 +319,12 @@ function bllvm() {
     --lto thin
 }
 
+function bbntls(){
+    ./build-binutils.py \
+    --install-folder /home/xtrymind/local/toolchains/clang/ \
+    --targets arm aarch64 x86_64
+}
+
 # Setup ccache
 function ccache_setup() {
     if [[ -n $(command -v ccache) ]]; then
