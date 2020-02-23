@@ -110,13 +110,15 @@ export PATH=${GCC_FOLDER}:${GCC_32_BIT_FOLDER}:$PATH
 CROSS_COMPILE+="${GCC_CC}"
 CROSS_COMPILE_ARM32+="${GCC_32_BIT_CC}"
 
-
 # common makeflags
 MAKEFLAGS+=(
     CROSS_COMPILE=${CROSS_COMPILE}
     CROSS_COMPILE_ARM32=${CROSS_COMPILE_ARM32}
     LOCALVERSION="${LOCALVERSION}"
 )
+
+# Start tracking time
+START=$(date +"%s")
 
 if [[ -z $CLEAN ]]; then
 # clean build
@@ -157,3 +159,9 @@ if [[ -z $BUILD_ONLY ]]; then
     rm -f "$UNSIGNED_ZIP"
     mv "$AK3/$SIGNED_ZIP" ${HOME}/flatKernel/${DEVICE}
 fi
+
+END=$(date +"%s")
+DURATION=$(format_time "${START}" "${END}")
+
+echo "\a"
+echo "${GRN}DURATION: ${DURATION}${RST}"
