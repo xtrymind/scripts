@@ -149,7 +149,7 @@ if [[ -z $BUILD_ONLY ]]; then
     SIGNED_ZIP=${KERNEL_NAME}.zip
 
     cd "$AK3"
-    zip -r9 "${UNSIGNED_ZIP}" -x README.md -- *
+    7z a -mx9 "${UNSIGNED_ZIP}" -x'!'README.md *
 
     # Sign zip
     java -jar "${BIN_FOLDER}/zipsigner-3.0.jar" \
