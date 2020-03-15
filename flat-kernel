@@ -130,7 +130,9 @@ fi
 make ARCH=arm64 O=out ${DEVICE}_defconfig
 
 if [[ ${HOSTNAME} = "ubox" ]]; then
-       ./scripts/config --file out/.config --disable CONFIG_THINLTO
+       ./scripts/config --file out/.config \
+           -d CONFIG_THINLTO \
+           -e CONFIG_LLVM_POLLY
 fi
 
 make "${MAKEFLAGS[@]}"
