@@ -336,3 +336,7 @@ function ccache_setup() {
         display_error "Please install ccache!"
     fi
 }
+
+function rsv() {
+    rsync -ahAXxvzz --compress-level=1 --numeric-ids --inplace --info=progress2 --delete-during -e "ssh -T -o Compression=no -x" ${1} ${2}
+}
