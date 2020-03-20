@@ -37,6 +37,10 @@ parse_parameters() {
             -fl | --flto)
                 FLTO=true ;;
 
+           # Upload zip to Telegram
+            "-t"|"--telegram")
+                TG=true ;;
+
             *)
                 die "Invalid parameter" ;;
         esac
@@ -51,6 +55,8 @@ parse_parameters() {
 }
 
 parse_parameters "$@"
+
+TG_MSG_FILE=$(mktemp)
 
 TC_FOLDER=${HOME}/local/toolchains
 KERNEL_FOLDER=${HOME}/local/kernel
@@ -124,6 +130,9 @@ MAKEFLAGS+=(
 # Start tracking time
 START=$(date +"%s")
 
+# last commit
+LAST_COMMIT=$(git kf)
+
 if [[ -z $CLEAN ]]; then
 # clean build
 make ARCH=arm64 O=out clean
@@ -177,3 +186,15 @@ DURATION=$(format_time "${START}" "${END}")
 echo "\a"
 echo "${GRN}DURATION: ${DURATION}${RST}"
 echo "${GRN}ZIPNAME: $SIGNED_ZIP${RST}"
+
+if [[ -n ${TG} ]]; then
+    {
+        echo "\`\`\`"
+        echo "${DEVICE} build successfully in ${DURATION,,}"
+        echo
+        echo "Commit : ${LAST_COMMIT}"
+        echo "\`\`\`"
+    } > "${TG_MSG_FILE}"
+    tg_msg "$(cat "${TG_MSG_FILE}")"
+    tg_upload ${HOME}/flatKernel/${DEVICE}/${SIGNED_ZIP}
+fi
