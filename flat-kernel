@@ -172,3 +172,4 @@ DURATION=$(format_time "${START}" "${END}")
 
 echo "\a"
 echo "${GRN}DURATION: ${DURATION}${RST}"
+echo "${GRN}ZIPNAME: $SIGNED_ZIP${RST}"
