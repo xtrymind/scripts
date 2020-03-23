@@ -146,8 +146,7 @@ make ARCH=arm64 O=out ${DEVICE}_defconfig
 
 if [[ -n $FLTO ]]; then
        ./scripts/config --file out/.config \
-           -d CONFIG_THINLTO \
-           -e CONFIG_LLVM_POLLY
+           -d CONFIG_THINLTO
 fi
 
 make "${MAKEFLAGS[@]}"
