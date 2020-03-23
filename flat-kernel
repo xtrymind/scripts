@@ -187,7 +187,9 @@ DURATION=$(format_time "${START}" "${END}")
 
 echo "\a"
 echo "${GRN}DURATION: ${DURATION}${RST}"
-echo "${GRN}ZIPNAME: $SIGNED_ZIP${RST}"
+if [[ -z $BUILD_ONLY ]]; then
+    echo "${GRN}ZIPNAME: $SIGNED_ZIP${RST}"
+fi
 
 if [[ -n ${TG} ]]; then
     {
