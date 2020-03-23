@@ -83,7 +83,11 @@ fi
 
 # Handle Clang
 if [[ ${COMPILER} = "clang" ]]; then
-    CLANG_FOLDER=${TC_FOLDER}/clang
+    if [[ -z $FLTO ]]; then
+        CLANG_FOLDER=${TC_FOLDER}/clang
+    else
+        CLANG_FOLDER=${TC_FOLDER}/proton-clang
+    fi
     GCC_FOLDER=${TC_FOLDER}/arm64-gcc/bin
     GCC_CC=aarch64-elf-
     GCC_32_BIT_FOLDER=${TC_FOLDER}/arm32-gcc/bin
