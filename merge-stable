@@ -1,4 +1,4 @@
-#!/usr/bin/env zsh
+#!/usr/bin/env bash
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
@@ -345,10 +345,7 @@ function update_tree() {
     exit 0
 }
 
-
-source "$(cd "$(dirname "$(readlink -f "${(%):-%x}")")" || return; pwd)/../common"
-source "${SCRIPTS_FOLDER}"/env/folders
-source "${SCRIPTS_FOLDER}/funcs/traps"
+source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/common"
 parse_parameters "${@}"
 update_sources
 generate_versions
