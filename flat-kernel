@@ -179,7 +179,7 @@ if [[ -z $BUILD_ONLY ]]; then
               "${SIGNED_ZIP}"
 
     rm -f "$UNSIGNED_ZIP"
-    mv "$AK3/$SIGNED_ZIP" ${HOME}/flatKernel/${DEVICE}
+    mv "$AK3/$SIGNED_ZIP" "${HOME}"/flatKernel/${DEVICE}
 fi
 
 END=$(date +"%s")
@@ -200,5 +200,5 @@ if [[ -n ${TG} ]]; then
         echo "\`\`\`"
     } > "${TG_MSG_FILE}"
     tg_msg "$(cat "${TG_MSG_FILE}")"
-    tg_upload ${HOME}/flatKernel/${DEVICE}/${SIGNED_ZIP}
+    tg_upload "${HOME}"/flatKernel/${DEVICE}/"${SIGNED_ZIP}"
 fi
