@@ -66,9 +66,9 @@ FILE_MOVE=${HOME}/flatKernel/${DEVICE}
 
 # default makeflags
 MAKEFLAGS=(
-    ${JOBS_FLAG}
-    ARCH=arm64
-    O=out
+    "${JOBS_FLAG}"
+    "ARCH=arm64"
+    "O=out"
 )
 
 # Ccache
