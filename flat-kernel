@@ -170,7 +170,7 @@ if [[ -z $BUILD_ONLY ]]; then
     UNSIGNED_ZIP=${KERNEL_NAME}-unsigned.zip
     SIGNED_ZIP=${KERNEL_NAME}.zip
 
-    cd "$AK3"
+    cd "$AK3" || exit
     7z a -mx9 "${UNSIGNED_ZIP}" -x'!'README.md *
 
     # Sign zip
