@@ -98,6 +98,8 @@ if [[ ${COMPILER} = "clang" ]]; then
     CLANG_VERSION=$(clang_version "${CLANG_BIN}")
     MAKEFLAGS+=(
         "CC=${CC}"
+        "CROSS_COMPILE=${GCC_CC}"
+        "CROSS_COMPILE_ARM32=${GCC_32_BIT_CC}"
         "KBUILD_COMPILER_STRING=${CLANG_VERSION}"
         "AR=llvm-ar"
         "NM=llvm-nm"
@@ -114,18 +116,12 @@ else
     GCC_CC=aarch64-linux-android-
     GCC_32_BIT_FOLDER=${TC_FOLDER}/arm-linux-androideabi-4.9/bin
     GCC_32_BIT_CC=arm-linux-androideabi-
+    MAKEFLAGS+=(
+        "CROSS_COMPILE=${GCC_CC}"
+        "CROSS_COMPILE_ARM32=${GCC_32_BIT_CC}"
+    )
     export PATH=${GCC_FOLDER}:${GCC_32_BIT_FOLDER}:$PATH
 fi
-
-CROSS_COMPILE+="${GCC_CC}"
-CROSS_COMPILE_ARM32+="${GCC_32_BIT_CC}"
-
-# common makeflags
-MAKEFLAGS+=(
-    CROSS_COMPILE=${CROSS_COMPILE}
-    CROSS_COMPILE_ARM32=${CROSS_COMPILE_ARM32}
-    LOCALVERSION="${LOCALVERSION}"
-)
 
 # Start tracking time
 START=$(date +"%s")
