@@ -54,8 +54,6 @@ function rps {
 
 # Set up android build environment
 function envrom(){
-    source venv/bin/activate
-    python -V
     export LC_ALL=C
 }
 
