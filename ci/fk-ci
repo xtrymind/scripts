@@ -1,0 +1,123 @@
+#!/usr/bin/env bash
+
+# for telegram commit message
+git config --global alias.kf 'show -s --format="%h (\"%s\")"'
+
+# common variable
+export KBUILD_BUILD_USER=xtrymind
+export KBUILD_BUILD_HOST=archdckr
+DEVICE="ginkgo"
+
+# Telegram notifier function
+function tg_msg() {
+    curl -s -X POST https://api.telegram.org/bot"${TOKEN}"/sendMessage \
+            -d chat_id="${CHAT_ID}" \
+            -d parse_mode="Markdown" \
+            -d text="${*}" 1>/dev/null
+}
+
+# Telegram uploader function
+function tg_upload() {
+    local FILE; FILE=${1}; shift
+
+    if [[ ! -f ${FILE} ]]; then
+        echo "tg_upload() failed to find ${FILE}!"
+        return 1
+    fi
+
+    curl -s -F chat_id="${CHAT_ID}" \
+            -F document=@"${FILE}" \
+            -F caption="${*}" \
+            -X POST https://api.telegram.org/bot"${TOKEN}"/sendDocument 1>/dev/null
+}
+
+# Formats the time
+function format_time() {
+    local TIME_STRING
+    MINS=$(((${2} - ${1}) / 60))
+    SECS=$(((${2} - ${1}) % 60))
+    if [[ ${MINS} -ge 60 ]]; then
+        HOURS=$((MINS / 60))
+        MINS=$((MINS % 60))
+    fi
+
+    if [[ ${HOURS} -eq 1 ]]; then
+        TIME_STRING+="1 HOUR, "
+    elif [[ ${HOURS} -ge 2 ]]; then
+        TIME_STRING+="${HOURS} HOURS, "
+    fi
+
+    if [[ ${MINS} -eq 1 ]]; then
+        TIME_STRING+="1 MINUTE"
+    else
+        TIME_STRING+="${MINS} MINUTES"
+    fi
+
+    if [[ ${SECS} -eq 1 && -n ${HOURS} ]]; then
+        TIME_STRING+=", AND 1 SECOND"
+    elif [[ ${SECS} -eq 1 && -z ${HOURS} ]]; then
+        TIME_STRING+=" AND 1 SECOND"
+    elif [[ ${SECS} -ne 1 && -n ${HOURS} ]]; then
+        TIME_STRING+=", AND ${SECS} SECONDS"
+    elif [[ ${SECS} -ne 1 && -z ${HOURS} ]]; then
+        TIME_STRING+=" AND ${SECS} SECONDS"
+    fi
+
+    echo "${TIME_STRING}"
+}
+
+git clone --depth=1 https://github.com/kdrag0n/proton-clang.git proton-clang
+git clone https://github.com/xtrymind/AnyKernel3.git --branch=ginkgo AnyKernel3-ginkgo
+export PATH=$(pwd)/proton-clang/bin:$PATH
+
+MAKEFLAGS+=(
+    "ARCH=arm64"
+    "CC=clang"
+    "CROSS_COMPILE=aarch64-linux-gnu-"
+    "CROSS_COMPILE_ARM32=arm-linux-gnueabi-"
+    "AR=llvm-ar"
+    "NM=llvm-nm"
+    "OBJCOPY=llvm-objcopy"
+    "OBJDUMP=llvm-objdump"
+    "STRIP=llvm-strip"
+    "O=out"
+)
+
+# Start tracking time
+START=$(date +"%s")
+
+make ARCH=arm64 O=out ginkgo_defconfig
+make -j"$(nproc)" "${MAKEFLAGS[@]}"
+
+if [[ ! -f "out/arch/arm64/boot/Image.gz-dtb" ]]; then
+    echo "Kernel image not found!"
+    exit 0
+fi
+
+END=$(date +"%s")
+DURATION=$(format_time "${START}" "${END}")
+
+cp -f out/arch/arm64/boot/Image.gz-dtb AnyKernel3-ginkgo
+SHA="-g$(git rev-parse --verify --short=7 HEAD)"
+LAST_COMMIT=$(git kf)
+# Export here to be picked later
+KERNEL_NAME=fk-$DEVICE-$(date +%Y%m%d-%H%M)${SHA}
+
+# Set final package names
+UNSIGNED_ZIP=${KERNEL_NAME}-unsigned.zip
+SIGNED_ZIP=${KERNEL_NAME}.zip
+
+cd AnyKernel3-ginkgo
+zip -r9 "${SIGNED_ZIP}" -x README.md -- *
+
+TG_MSG_FILE=$(mktemp)
+
+{
+    echo "\`\`\`"
+    echo "${DEVICE} build successfully in ${DURATION,,}"
+    echo
+    echo "Commit : ${LAST_COMMIT}"
+    echo "\`\`\`"
+} > "${TG_MSG_FILE}"
+tg_msg "$(cat "${TG_MSG_FILE}")"
+tg_upload "${SIGNED_ZIP}"
