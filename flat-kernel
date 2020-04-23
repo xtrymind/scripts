@@ -138,7 +138,7 @@ rm -f out/arch/arm64/boot/Image.gz-dtb
 fi
 
 # Point to proper defconfig and generate version files
-make ARCH=arm64 O=out ${DEVICE}_defconfig
+make -s ARCH=arm64 O=out ${DEVICE}_defconfig
 
 if [[ -n $FLTO ]]; then
        ./scripts/config --file out/.config \
