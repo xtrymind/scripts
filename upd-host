@@ -39,9 +39,14 @@ header "Updating repos"
 git fetch origin
 git reset --hard origin/master
 
+# Download bebasid hosts
+header "Download bebasid hosts"
+aria2c https://raw.githubusercontent.com/bebasid/bebasid/master/releases/hosts -d /tmp
+mv /tmp/hosts myhosts
+
 # Copy additional host
 header "Copy Additional host, blacklist, and whitelist if exist"
-[[ -f ${HOME}/local/github/myhosts ]] && cp -v "${HOME}/local/github/myhosts" .
+[[ -f ${HOME}/local/github/myhosts ]] && cat -v ${HOME}/local/github/myhosts >> myhosts
 [[ -f ${HOME}/local/github/whitelist ]] && cp -v "${HOME}/local/github/whitelist" .
 [[ -f ${HOME}/local/github/blacklist ]] && cp -v "${HOME}/local/github/blacklist" .
 
