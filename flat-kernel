@@ -49,6 +49,7 @@ parse_parameters() {
 
     # Default parameters
     [[ -z ${DEVICE} ]] && DEVICE="ginkgo"
+    [[ ${DEVICE} = "tulip" ]] && COMPILER=gcc
 
     [[ -z ${COMPILER} ]] && COMPILER=clang
 
@@ -64,11 +65,13 @@ KERNEL_FOLDER=${HOME}/local/kernel
 AK3=${KERNEL_FOLDER}/AnyKernel3-${DEVICE}
 FILE_MOVE=${HOME}/flatKernel/${DEVICE}
 
+[[ ! ${DEVICE} = "tulip" ]] && OUT=out
+
 # default makeflags
 MAKEFLAGS=(
     "${JOBS_FLAG}"
     "ARCH=arm64"
-    "O=out"
+    "O=${OUT}"
 )
 
 # Ccache
@@ -133,22 +136,22 @@ fi
 
 if [[ -z $CLEAN ]]; then
 # clean build
-make ARCH=arm64 O=out clean
-rm -f out/arch/arm64/boot/Image.gz-dtb
+make ARCH=arm64 O=${OUT} clean
+rm -f ${OUT}/arch/arm64/boot/Image.gz-dtb
 fi
 
 # Point to proper defconfig and generate version files
-make -s ARCH=arm64 O=out ${DEVICE}_defconfig
+make -s ARCH=arm64 O=${OUT} ${DEVICE}_defconfig
 
 if [[ -n $FLTO ]]; then
-       ./scripts/config --file out/.config \
+       ./scripts/config --file ${OUT}/.config \
            -d CONFIG_THINLTO
 fi
 
 make -s "${MAKEFLAGS[@]}"
 
 if [[ -z $BUILD_ONLY ]]; then
-    if [[ ! -f "out/arch/arm64/boot/Image.gz-dtb" ]]; then
+    if [[ ! -f "${OUT}/arch/arm64/boot/Image.gz-dtb" ]]; then
         echo "Kernel image not found!"
         exit 0
     fi
@@ -156,7 +159,7 @@ if [[ -z $BUILD_ONLY ]]; then
     git -C "$AK3" clean -qdfx -e '*.zip'
     # Kernel image task(s)
     # Copy compressed kernel with appended DTB image
-    cp -f out/arch/arm64/boot/Image.gz-dtb "$AK3"
+    cp -f ${OUT}/arch/arm64/boot/Image.gz-dtb "$AK3"
 
     SHA="-g$(git rev-parse --verify --short=7 HEAD)"
     # Export here to be picked later
