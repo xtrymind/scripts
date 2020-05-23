@@ -151,15 +151,32 @@ fi
 make -s "${MAKEFLAGS[@]}"
 
 if [[ -z $BUILD_ONLY ]]; then
-    if [[ ! -f "${OUT}/arch/arm64/boot/Image.gz-dtb" ]]; then
-        echo "Kernel image not found!"
-        exit 0
+    if [[ ! ${DEVICE} = "tulip" ]]; then
+        if [[ ! -f "${OUT}/arch/arm64/boot/Image.gz-dtb" ]]; then
+            echo "Kernel image not found!"
+            exit 0
+        fi
     fi
     # Clean everything except zip files
     git -C "$AK3" clean -qdfx -e '*.zip'
     # Kernel image task(s)
-    # Copy compressed kernel with appended DTB image
-    cp -f ${OUT}/arch/arm64/boot/Image.gz-dtb "$AK3"
+    if [[ ! ${DEVICE} = "tulip" ]]; then
+        # Copy compressed kernel with appended DTB image
+        cp -f ${OUT}/arch/arm64/boot/Image.gz-dtb "$AK3"
+    else
+        cp -f arch/arm64/boot/Image "$AK3"
+    fi
+
+    if [[ ${DEVICE} = "tulip" ]]; then
+        # dtb image
+        dtbToolCM -2 -o dtb -s 2048 -p scripts/dtc/ arch/arm/boot/dts/
+        cp dtb "$AK3"
+
+        # wlan module
+        aarch64-linux-gnu-strip --strip-unneeded drivers/staging/prima/wlan.ko
+        mkdir -p "$AK3"/modules/system/lib/modules/pronto
+        cp drivers/staging/prima/wlan.ko "$AK3"/modules/system/lib/modules/pronto/pronto_wlan.ko
+    fi
 
     SHA="-g$(git rev-parse --verify --short=7 HEAD)"
     # Export here to be picked later
