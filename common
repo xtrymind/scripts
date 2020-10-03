@@ -305,7 +305,7 @@ function signota() {
     ./build/tools/releasetools/ota_from_target_files -k ${HOME}/.android-certs/releasekey \
     --block --backup=true \
     signed-target_files.zip \
-    lineage-17.1-"$(date +%Y%m%d)"-X00T-signed.zip
+    lineage-17.1-"$(date +%Y%m%d)"-ginkgo-signed.zip
 }
 
 function bllvm() {
