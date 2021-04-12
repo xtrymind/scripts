@@ -41,7 +41,7 @@ git reset --hard origin/master
 
 # Download bebasid hosts
 header "Download bebasid hosts"
-aria2c https://raw.githubusercontent.com/bebasid/bebasid/master/releases/hosts -d /tmp
+curl https://raw.githubusercontent.com/bebasid/bebasid/master/releases/hosts --output /tmp/hosts
 mv /tmp/hosts myhosts
 
 # Copy additional host
